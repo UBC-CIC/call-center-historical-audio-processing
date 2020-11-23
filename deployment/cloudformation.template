@@ -28,8 +28,6 @@ Metadata:
           default: Amazon S3 Configuration
         Parameters:
           - s3BucketName
-          - audioFilePrefix
-          - rawAudioUploadPrefix
       - Label:
           default: Amazon DynamoDB Configuration
         Parameters:
@@ -38,11 +36,7 @@ Metadata:
           - contactDetailsTable
     ParameterLabels:
       s3BucketName:
-        default: Call Audio Bucket Name
-      audioFilePrefix:
-        default: Audio File Prefix
-      rawAudioUploadPrefix:
-        default: Test Mono Audio Prefix
+        default: Bucket Name
       transcriptSegmentsTable:
         default: Transcript Table Name for audio from the customer
       transcriptSegmentsToCustomerTable:
@@ -56,21 +50,15 @@ Metadata:
 Parameters:
   s3BucketName:
     Type: String
-    Default: "new-audio-bucket-name"
+    Default: "ecomm911-new-bucket-name"
     Description: >
       Enter the (globally unique) name you would like to use for the Amazon S3 bucket where we will store the audio files, and the sample contact flow.
       This template will fail to deploy if the bucket name you chose is currently in use.
     AllowedPattern: '(?=^.{3,63}$)(?!^(\d+\.)+\d+$)(^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$)'
-  audioFilePrefix:
+  esDomainName:
     Type: String
-    Default:  recordings/
-    Description:  The Amazon S3 prefix where the audio files will be saved (must end in "/")
-  rawAudioUploadPrefix:
-    Type: String
-    Default:  audio-file-input/
-    Description:  >
-      The Amazon S3 prefix where raw/wav (audio/L16; mono; 8 kHz) audio recordings may be uploaded in the event you would like
-      process an audio file vs making a phone call and streaming from KVS. Mainly for testing, or for realtime transcription of audio files. This will only work with single channel files (mono).
+    Default: ecomm-sop-search
+    Description: Name for the Amazon ES domain that this template will create. Domain names must start with a lowercase letter and must be between 3 and 28 characters. Valid characters are a-z (lowercase only), 0-9.
   transcriptSegmentsTable:
     Type: String
     Default:  contactTranscriptSegments
@@ -141,10 +129,6 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Ref s3BucketName
-      AccessControl: LogDeliveryWrite
-      LoggingConfiguration:
-        DestinationBucketName: !Ref s3BucketName
-        LogFilePrefix: 'logs/'
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -246,7 +230,7 @@ Resources:
       SSESpecification:
         SSEEnabled: True
 
-  AIPoweredSpeechAnalyticsKvsTranscribeRole:
+  KvsTranscribeRole:
     Type: "AWS::IAM::Role"
     Metadata:
       cfn_nag:
@@ -323,7 +307,7 @@ Resources:
                   - "kinesisvideo:List*"
                 Resource: "*"
 
-  AIPoweredSpeechAnalyticsKvsTriggerRole:
+  KvsTriggerRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -359,7 +343,7 @@ Resources:
                 Resource:
                   - !GetAtt kvsTranscriber.Arn
 
-  AIPoweredSpeechAnalyticsContactFlowCreatorRole:
+  ContactFlowCreatorRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -394,7 +378,7 @@ Resources:
                 Resource:
                   - !Sub ${createS3Bucket.Arn}/*
 
-  AIPoweredSpeechAnalyticsConnectUserStsRole:
+  ConnectUserStsRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -416,7 +400,7 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
 
-  AIPoweredSpeechAnalyticsConnectUserStsPolicy:
+  ConnectUserStsPolicy:
     Type: 'AWS::IAM::Policy'
     Metadata:
       cfn_nag:
@@ -426,7 +410,7 @@ Resources:
     Properties:
       PolicyName: !Sub ${AWS::StackName}-UserStsPolicy
       Roles:
-        - !Ref AIPoweredSpeechAnalyticsConnectUserStsRole
+        - !Ref ConnectUserStsRole
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -457,7 +441,7 @@ Resources:
               - "connect:UpdateContactAttributes"
             Resource: "*"
 
-  AIPoweredSpeechAnalyticsSTSTokenLambdaIAMRole:
+  STSTokenLambdaIAMRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -495,9 +479,9 @@ Resources:
                 Action:
                   - 'sts:AssumeRole'
                 Resource:
-                  - !GetAtt AIPoweredSpeechAnalyticsConnectUserStsRole.Arn
+                  - !GetAtt ConnectUserStsRole.Arn
                   
-  AIPoweredSpeechAnalyticsTranscribeRole:
+  TranscribeRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -537,16 +521,25 @@ Resources:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:UpdateItem"
                 Resource:
                   - !GetAtt transcriptSegmentsDDBTable.StreamArn
                   - !GetAtt transcriptSegmentsToCustomerDDBTable.StreamArn
               -
                 Effect: "Allow"
                 Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
-                Resource:
-                  - !GetAtt createS3Bucket.Arn
+                  - "comprehend:DetectEntities"
+                  - "comprehend:DetectKeyPhrases"
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action:
+                  - es:*
+                Resource: "*"
 
   kvsTranscriber:
     Type: "AWS::Lambda::Function"
@@ -557,7 +550,7 @@ Resources:
         transcript DynamoDB tables, and uploads the audio file to S3.
 
       Handler: "com.amazonaws.kvstranscribestreaming.KVSTranscribeStreamingLambda::handleRequest"
-      Role: !GetAtt AIPoweredSpeechAnalyticsKvsTranscribeRole.Arn
+      Role: !GetAtt KvsTranscribeRole.Arn
       Runtime: java8
       MemorySize: 512
       # maximum timeout is 15 minutes today
@@ -568,8 +561,6 @@ Resources:
           APP_REGION: !Ref "AWS::Region"
           TRANSCRIBE_REGION: !Ref "AWS::Region"
           RECORDINGS_BUCKET_NAME: !Ref s3BucketName
-          RECORDINGS_KEY_PREFIX: !Ref audioFilePrefix
-          INPUT_KEY_PREFIX: !Ref rawAudioUploadPrefix
           TABLE_CALLER_TRANSCRIPT: !Ref transcriptSegmentsTable
           TABLE_CALLER_TRANSCRIPT_TO_CUSTOMER: !Ref transcriptSegmentsToCustomerTable
           RECORDINGS_PUBLIC_READ_ACL: "FALSE"
@@ -581,7 +572,7 @@ Resources:
 
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'kvs_transcribe_streaming_lambda.zip']]
+        S3Key: !Join ["", [!Ref existingS3Path, 'ecomm-911-virtual-assistant.zip']]
 
   kvsConsumerTrigger:
     Type: "AWS::Lambda::Function"
@@ -590,7 +581,7 @@ Resources:
         AWS Lambda Function to start (asynchronous) streaming transcription; it is expected to be called by the
         Amazon Connect Contact Flow.
       Handler: "kvs_trigger.handler"
-      Role: !GetAtt AIPoweredSpeechAnalyticsKvsTriggerRole.Arn
+      Role: !GetAtt KvsTriggerRole.Arn
       Runtime: "nodejs12.x"
       MemorySize: 128
       Timeout: 30
@@ -607,14 +598,14 @@ Resources:
       Description:  >
         AWS Lambda Function that will be triggered when the call starts so that we have the initial contact details which can later add to when we have the transcript, and audio file location.
       Handler: "contact_init.handler"
-      Role: !GetAtt AIPoweredSpeechAnalyticsSTSTokenLambdaIAMRole.Arn
+      Role: !GetAtt STSTokenLambdaIAMRole.Arn
       Runtime: "nodejs12.x"
       MemorySize: 128
       Timeout: 30
       Environment:
         Variables:
           table_name: !Ref contactDetailsTable
-          assume_role: !GetAtt AIPoweredSpeechAnalyticsConnectUserStsRole.Arn
+          assume_role: !GetAtt ConnectUserStsRole.Arn
       Code:
         S3Bucket: !Ref existingS3BucketName
         S3Key: !Join ["", [!Ref existingS3Path, 'contact_init.zip']]
@@ -625,7 +616,7 @@ Resources:
       Description:  >
         AWS Lambda Function that will create the initial sample contact flow and upload it to the S3 bucket
       Handler: "create_contact_flow.handler"
-      Role: !GetAtt AIPoweredSpeechAnalyticsContactFlowCreatorRole.Arn
+      Role: !GetAtt ContactFlowCreatorRole.Arn
       Runtime: "nodejs12.x"
       MemorySize: 256
       Timeout: 120
@@ -639,13 +630,14 @@ Resources:
       Description:  >
         AWS Lambda Function that runs the transcribed text through AWS Comprehend
       Handler: "preprocess.handler"
-      Role: !GetAtt AIPoweredSpeechAnalyticsTranscribeRole.Arn
+      Role: !GetAtt TranscribeRole.Arn
       Runtime: "python3.8"
       MemorySize: 256
       Timeout: 120
       Environment:
         Variables:
           bucket_name: !Ref s3BucketName
+          esDomain: !GetAtt ESDomain.DomainEndpoint
       Code:
         S3Bucket: !Ref existingS3BucketName
         S3Key: !Join ["", [!Ref existingS3Path, 'preprocess.zip']]
@@ -677,3 +669,203 @@ Resources:
         !GetAtt initContactDetails.Arn
       kvsTriggerFunction:
         !GetAtt kvsConsumerTrigger.Arn
+
+  ESDomain:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName:
+        Ref: esDomainName
+      ElasticsearchVersion: '6.3'
+      ElasticsearchClusterConfig:
+        InstanceCount: '1'
+        InstanceType: t2.small.elasticsearch
+      EBSOptions:
+        EBSEnabled: true
+        Iops: 0
+        VolumeSize: 10
+        VolumeType: gp2
+      SnapshotOptions:
+        AutomatedSnapshotStartHour: '0'
+  
+  createESKeyPhraseIndex:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description:  >
+        "Triggered by S3 review upload to the repo bucket and start the key phrase analysis via Amazon Comprehend"
+      Handler: comprehend.handler
+      Role: !GetAtt ESTriggerRole.Arn
+      Runtime: python3.6
+      MemorySize: 128
+      Timeout: 300
+      Environment:
+        Variables:
+          bucket: !Ref s3BucketName
+          esDomain: !GetAtt ESDomain.DomainEndpoint
+      Code:
+        S3Bucket: !Ref existingS3BucketName
+        S3Key: !Join ["", [!Ref existingS3Path, 'ES_comprehend.zip']]
+  
+  ESTriggerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: S3-lambda-trigger-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "comprehend"
+                Effect: Allow
+                Action:
+                  - comprehend:*
+                Resource: "*"
+              -
+                Sid: "s3"
+                Effect: Allow
+                Action:
+                  - s3:*
+                Resource: !Sub "arn:aws:s3:::${s3BucketName}/*"
+              -
+                Sid: "es"
+                Effect: Allow
+                Action:
+                  - es:*
+                Resource: "*"
+
+  TestS3BucketEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      SourceAccount: !Ref 'AWS::AccountId'
+      FunctionName: !Ref 'createESKeyPhraseIndex'
+      SourceArn: !GetAtt createS3Bucket.Arn
+      Principal: s3.amazonaws.com
+
+  ApplyNotificationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies:
+        - PolicyName: S3BucketNotificationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowBucketNotification
+                Effect: Allow
+                Action: s3:PutBucketNotification
+                Resource:
+                  - !Sub '${createS3Bucket.Arn}'
+                  - !Sub '${createS3Bucket.Arn}/*'
+                  
+                  
+  ApplyBucketNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: function that will apply the notification event onto the bucket
+      Handler: index.handler
+      Runtime: python2.7
+      Role: !GetAtt 'ApplyNotificationFunctionRole.Arn'
+      Timeout: 240
+      Code:
+        ZipFile: |
+          import boto3
+          import logging
+          import json
+          import cfnresponse
+
+          s3Client = boto3.client('s3')
+          logger = logging.getLogger()
+          logger.setLevel(logging.DEBUG)
+
+          def addBucketNotification(bucketName, notificationId, functionArn):
+            notificationResponse = s3Client.put_bucket_notification_configuration(
+              Bucket=bucketName,
+              NotificationConfiguration={
+                'LambdaFunctionConfigurations': [
+                  {
+                    'Id': notificationId,
+                    'LambdaFunctionArn': functionArn,
+                    'Events': [
+                      's3:ObjectCreated:*'
+                    ],
+                    'Filter': {
+                      'Key': {
+                        'FilterRules': [
+                          {
+                            'Name': 'suffix',
+                            'Value': 'pdf'
+                          }
+                        ]
+                      }
+                    }
+                  },
+                ]
+              }
+            )
+            return notificationResponse
+
+          def create(properties, physical_id):
+            bucketName = properties['S3Bucket']
+            notificationId = properties['NotificationId']
+            functionArn = properties['FunctionARN']
+            response = addBucketNotification(bucketName, notificationId, functionArn)
+            logger.info('AddBucketNotification response: %s' % json.dumps(response))
+            return cfnresponse.SUCCESS, physical_id
+
+          def update(properties, physical_id):
+            return cfnresponse.SUCCESS, None
+
+          def delete(properties, physical_id):
+            return cfnresponse.SUCCESS, None
+
+          def handler(event, context):
+            logger.info('Received event: %s' % json.dumps(event))
+
+            status = cfnresponse.FAILED
+            new_physical_id = None
+
+            try:
+              properties = event.get('ResourceProperties')
+              physical_id = event.get('PhysicalResourceId')
+
+              status, new_physical_id = {
+                'Create': create,
+                'Update': update,
+                'Delete': delete
+              }.get(event['RequestType'], lambda x, y: (cfnresponse.FAILED, None))(properties, physical_id)
+            except Exception as e:
+              logger.error('Exception: %s' % e)
+              status = cfnresponse.FAILED
+            finally:
+              cfnresponse.send(event, context, status, {}, new_physical_id)
+
+  ApplyNotification:
+    Type: Custom::ApplyNotification
+    Properties:
+      ServiceToken: !GetAtt ApplyBucketNotificationFunction.Arn
+      S3Bucket: !Ref createS3Bucket
+      FunctionARN: !GetAtt createESKeyPhraseIndex.Arn
+      NotificationId: S3ObjectCreatedEvent

@@ -104,16 +104,20 @@ public class TranscribedSegmentWriter {
         if (result.alternatives().size() > 0) {
             if (!transcript.isEmpty()) {
 
+                double startTime = result.startTime();
+
                 // concatenate transcript result over time in DynamoDB item if it exists
                 if (existingDdbItem != null) {
                     String currentTranscript = existingDdbItem.getString("Transcript");
                     transcript = currentTranscript.concat(" " + transcript);
+
+                    startTime = existingDdbItem.getDouble("StartTime");
                 }
 
                 Instant now = Instant.now();
                 ddbItem = new Item()
                         .withKeyComponent("ContactId", contactId)
-                        .withDouble("StartTime", result.startTime())
+                        .withDouble("StartTime", startTime)
                         .withDouble("EndTime", result.endTime())
                         .withString("SegmentId", result.resultId())
                         .withString("Transcript", transcript)
@@ -121,7 +125,7 @@ public class TranscribedSegmentWriter {
                         // LoggedOn is an ISO-8601 string representation of when the entry was created
                         .withString("LoggedOn", now.toString())
                         // expire entries after 6 hours of creation/update
-                        .withDouble("ExpiresOn", now.plusMillis(6 * 3600).toEpochMilli());
+                        .withDouble("ExpiresOn", now.plusSeconds(6 * 3600).getEpochSecond());
 
                 if (consoleLogTranscriptFlag) {
                     logger.info(String.format("Thread %s %d: [%s, %s] - %s",

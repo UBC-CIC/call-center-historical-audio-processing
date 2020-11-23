@@ -65,8 +65,6 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
     private static final Regions TRANSCRIBE_REGION = Regions.fromName(System.getenv("TRANSCRIBE_REGION"));
     private static final String TRANSCRIBE_ENDPOINT = "https://transcribestreaming." + TRANSCRIBE_REGION.getName() + ".amazonaws.com";
     private static final String RECORDINGS_BUCKET_NAME = System.getenv("RECORDINGS_BUCKET_NAME");
-    private static final String RECORDINGS_KEY_PREFIX = System.getenv("RECORDINGS_KEY_PREFIX");
-    private static final String INPUT_KEY_PREFIX = System.getenv("INPUT_KEY_PREFIX");
     private static final boolean CONSOLE_LOG_TRANSCRIPT_FLAG = Boolean.parseBoolean(System.getenv("CONSOLE_LOG_TRANSCRIPT_FLAG"));
     private static final boolean RECORDINGS_PUBLIC_READ_ACL = Boolean.parseBoolean(System.getenv("RECORDINGS_PUBLIC_READ_ACL"));
     private static final String START_SELECTOR_TYPE = System.getenv("START_SELECTOR_TYPE");
@@ -181,37 +179,8 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
                 logger.error("Error during streaming: ", e);
                 throw e;
 
-            } finally {
-                if (kvsStreamTrackObjectFromCustomer != null) {
-                    closeFileAndUploadRawAudio(kvsStreamTrackObjectFromCustomer, contactId, saveCallRecording);
-                }
-                if (kvsStreamTrackObjectToCustomer != null) {
-                    closeFileAndUploadRawAudio(kvsStreamTrackObjectToCustomer, contactId, saveCallRecording);
-                }
             }
         }
-    }
-
-    /**
-     * Closes the FileOutputStream and uploads the Raw audio file to S3
-     *
-     * @param kvsStreamTrackObject
-     * @param saveCallRecording should the call recording be uploaded to S3?
-     * @throws IOException
-     */
-    private void closeFileAndUploadRawAudio(KVSStreamTrackObject kvsStreamTrackObject, String contactId, Optional<Boolean> saveCallRecording) throws IOException {
-
-        kvsStreamTrackObject.getInputStream().close();
-        kvsStreamTrackObject.getOutputStream().close();
-
-        //Upload the Raw Audio file to S3
-        if ((saveCallRecording.isPresent() ? saveCallRecording.get() : false) && (new File(kvsStreamTrackObject.getSaveAudioFilePath().toString()).length() > 0)) {
-            AudioUtils.uploadRawAudio(REGION, RECORDINGS_BUCKET_NAME, RECORDINGS_KEY_PREFIX, kvsStreamTrackObject.getSaveAudioFilePath().toString(), contactId, RECORDINGS_PUBLIC_READ_ACL,
-                    getAWSCredentials());
-        } else {
-            logger.info("Skipping upload to S3.  saveCallRecording was disabled or audio file has 0 bytes: " + kvsStreamTrackObject.getSaveAudioFilePath().toString());
-        }
-
     }
 
     /**
