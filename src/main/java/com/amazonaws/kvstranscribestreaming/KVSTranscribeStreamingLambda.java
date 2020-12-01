@@ -39,26 +39,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Demonstrate Amazon Connect's real-time transcription feature using AWS Kinesis Video Streams and AWS Transcribe.
+ * Main Java Lambda using AWS Kinesis Video Streams and AWS Transcribe to asynchronously transcribe .
  * The data flow is :
- * <p>
  * Amazon Connect => AWS KVS => AWS Transcribe => AWS DynamoDB
  *
- * <p>Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.</p>
+ * Code modified from https://github.com/amazon-connect/amazon-connect-realtime-transcription
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this
- * software and associated documentation files (the "Software"), to deal in the Software
- * without restriction, including without limitation the rights to use, copy, modify,
- * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so.
- * <p>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
- * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 public class KVSTranscribeStreamingLambda implements RequestHandler<TranscriptionRequest, String> {
 
     private static final Regions REGION = Regions.fromName(System.getenv("APP_REGION"));
@@ -121,7 +109,6 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
     /**
      * Starts streaming between KVS and Transcribe
      * The transcript segments are continuously saved to the Dynamo DB table
-     * At end of the streaming session, the raw audio is saved as an s3 object
      *
      * @param streamARN
      * @param startFragmentNum
@@ -250,7 +237,7 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
     }
 
     /**
-     * @return AWS credentials to be used to connect to s3 (for fetching and uploading audio) and KVS
+     * @return AWS credentials to be used to connect to s3 and KVS
      */
     private static AWSCredentialsProvider getAWSCredentials() {
         return DefaultAWSCredentialsProviderChain.getInstance();
@@ -308,24 +295,6 @@ public class KVSTranscribeStreamingLambda implements RequestHandler<Transcriptio
         @Override
         public void subscribe(Subscriber<? super AudioStream> s) {
             s.onSubscribe(new KVSByteToAudioEventSubscription(s, streamingMkvReader, contactId, outputStream, tagProcessor, fragmentVisitor, track));
-        }
-    }
-
-    /**
-     * FileAudioStreamPublisher implements audio stream publisher.
-     * It emits audio events from a File InputStream asynchronously in a separate thread
-     */
-    private static class FileAudioStreamPublisher implements Publisher<AudioStream> {
-
-        private final InputStream inputStream;
-
-        private FileAudioStreamPublisher(InputStream inputStream) {
-            this.inputStream = inputStream;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super AudioStream> s) {
-            s.onSubscribe(new FileByteToAudioEventSubscription(s, inputStream));
         }
     }
 }

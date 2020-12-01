@@ -213,11 +213,11 @@ Resources:
       TableName:  !Ref contactDetailsTable
       AttributeDefinitions:
         -
-          AttributeName: "contactId"
+          AttributeName: "ContactId"
           AttributeType: "S"
       KeySchema:
         -
-          AttributeName: "contactId"
+          AttributeName: "ContactId"
           KeyType: "HASH"
       # assuming 5 concurrent calls
       ProvisionedThroughput:
@@ -517,23 +517,26 @@ Resources:
               -
                 Effect: "Allow"
                 Action:
-                  - "dynamodb:DescribeStream"
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
+                  - "dynamodb:DescribeStream"
                   - "dynamodb:ListStreams"
-                  - "dynamodb:Query"
-                  - "dynamodb:Scan"
+                Resource:
+                  - !Sub ${transcriptSegmentsDDBTable.StreamArn}
+              -
+                Effect: "Allow"
+                Action:
                   - "dynamodb:GetItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:UpdateItem"
                 Resource:
-                  - !GetAtt transcriptSegmentsDDBTable.StreamArn
-                  - !GetAtt transcriptSegmentsToCustomerDDBTable.StreamArn
+                  - !Sub ${contactDetailsDDBTable.Arn}
               -
                 Effect: "Allow"
                 Action:
                   - "comprehend:DetectEntities"
                   - "comprehend:DetectKeyPhrases"
+                  - "comprehend:DetectSyntax"
                 Resource: "*"
               -
                 Effect: "Allow"
@@ -636,7 +639,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          bucket_name: !Ref s3BucketName
+          table_name: !Ref contactDetailsTable
           esDomain: !GetAtt ESDomain.DomainEndpoint
       Code:
         S3Bucket: !Ref existingS3BucketName
@@ -650,13 +653,13 @@ Resources:
       StartingPosition: "TRIM_HORIZON"
       Enabled: True
 
-  comprehendTranscribedAudioTextToCustomerEventMapping:
-    Type: "AWS::Lambda::EventSourceMapping"
-    Properties:
-      EventSourceArn: !GetAtt transcriptSegmentsToCustomerDDBTable.StreamArn
-      FunctionName: !GetAtt comprehendTranscribedAudioText.Arn
-      StartingPosition: "TRIM_HORIZON"
-      Enabled: True
+  # comprehendTranscribedAudioTextToCustomerEventMapping:
+  #   Type: "AWS::Lambda::EventSourceMapping"
+  #   Properties:
+  #     EventSourceArn: !GetAtt transcriptSegmentsToCustomerDDBTable.StreamArn
+  #     FunctionName: !GetAtt comprehendTranscribedAudioText.Arn
+  #     StartingPosition: "TRIM_HORIZON"
+  #     Enabled: True
 
   invokeContactFlowCreator:
     Type: Custom::CreateKVSContactFlow
