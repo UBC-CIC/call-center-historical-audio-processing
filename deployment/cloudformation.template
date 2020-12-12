@@ -50,15 +50,15 @@ Metadata:
 Parameters:
   s3BucketName:
     Type: String
-    Default: "ecomm911-new-bucket-name"
+    Default: "connect-contact-flow-storage-bucket"
     Description: >
-      Enter the (globally unique) name you would like to use for the Amazon S3 bucket where we will store the audio files, and the sample contact flow.
+      The name for the Amazon S3 bucket that will store the sample contact flow when deployment finishes.
       This template will fail to deploy if the bucket name you chose is currently in use.
     AllowedPattern: '(?=^.{3,63}$)(?!^(\d+\.)+\d+$)(^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$)'
   esDomainName:
     Type: String
-    Default: ecomm-sop-search
-    Description: Name for the Amazon ES domain that this template will create. Domain names must start with a lowercase letter and must be between 3 and 28 characters. Valid characters are a-z (lowercase only), 0-9.
+    Default: transcript-indexer
+    Description: Name for the Amazon ES domain that was created earlier in deployment, should be a name for an existing ES domain in the current account and region.
   transcriptSegmentsTable:
     Type: String
     Default:  contactTranscriptSegments
@@ -74,11 +74,11 @@ Parameters:
   existingS3BucketName:
     Type: String
     Default: existingS3Bucket
-    Description: The name of the S3 bucket that contains the zipped lambda files
+    Description: The name of the S3 bucket that contains the zipped lambda deployment packages
   existingS3Path:
     Type: String
     Default: existingS3Path/
-    Description: The path to the zipped lambda files in the existingS3BucketName
+    Description: The path to the zipped lambda files in the bucket provided in existingS3BucketName
 Outputs:
   transcriptSegmentsDDBTable:
     Description:  The ARN of the DynamoDB table created to store segments of call transcripts (customer audio)
@@ -639,8 +639,8 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          table_name: !Ref contactDetailsTable
-          esDomain: !GetAtt ESDomain.DomainEndpoint
+          CONTACT_TABLE_NAME: !Ref contactDetailsTable
+          ES_DOMAIN: !Ref esDomainName
       Code:
         S3Bucket: !Ref existingS3BucketName
         S3Key: !Join ["", [!Ref existingS3Path, 'preprocess.zip']]
@@ -653,6 +653,7 @@ Resources:
       StartingPosition: "TRIM_HORIZON"
       Enabled: True
 
+  # Will create a trigger for the call taker transcription table
   # comprehendTranscribedAudioTextToCustomerEventMapping:
   #   Type: "AWS::Lambda::EventSourceMapping"
   #   Properties:
@@ -690,185 +691,3 @@ Resources:
       SnapshotOptions:
         AutomatedSnapshotStartHour: '0'
   
-  createESKeyPhraseIndex:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description:  >
-        "Triggered by S3 review upload to the repo bucket and start the key phrase analysis via Amazon Comprehend"
-      Handler: comprehend.handler
-      Role: !GetAtt ESTriggerRole.Arn
-      Runtime: python3.6
-      MemorySize: 128
-      Timeout: 300
-      Environment:
-        Variables:
-          bucket: !Ref s3BucketName
-          esDomain: !GetAtt ESDomain.DomainEndpoint
-      Code:
-        S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'ES_comprehend.zip']]
-  
-  ESTriggerRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "lambda.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Path: "/"
-      Policies:
-        -
-          PolicyName: S3-lambda-trigger-policy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Sid: "comprehend"
-                Effect: Allow
-                Action:
-                  - comprehend:*
-                Resource: "*"
-              -
-                Sid: "s3"
-                Effect: Allow
-                Action:
-                  - s3:*
-                Resource: !Sub "arn:aws:s3:::${s3BucketName}/*"
-              -
-                Sid: "es"
-                Effect: Allow
-                Action:
-                  - es:*
-                Resource: "*"
-
-  TestS3BucketEventPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:invokeFunction
-      SourceAccount: !Ref 'AWS::AccountId'
-      FunctionName: !Ref 'createESKeyPhraseIndex'
-      SourceArn: !GetAtt createS3Bucket.Arn
-      Principal: s3.amazonaws.com
-
-  ApplyNotificationFunctionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Path: /
-      Policies:
-        - PolicyName: S3BucketNotificationPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: AllowBucketNotification
-                Effect: Allow
-                Action: s3:PutBucketNotification
-                Resource:
-                  - !Sub '${createS3Bucket.Arn}'
-                  - !Sub '${createS3Bucket.Arn}/*'
-                  
-                  
-  ApplyBucketNotificationFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description: function that will apply the notification event onto the bucket
-      Handler: index.handler
-      Runtime: python2.7
-      Role: !GetAtt 'ApplyNotificationFunctionRole.Arn'
-      Timeout: 240
-      Code:
-        ZipFile: |
-          import boto3
-          import logging
-          import json
-          import cfnresponse
-
-          s3Client = boto3.client('s3')
-          logger = logging.getLogger()
-          logger.setLevel(logging.DEBUG)
-
-          def addBucketNotification(bucketName, notificationId, functionArn):
-            notificationResponse = s3Client.put_bucket_notification_configuration(
-              Bucket=bucketName,
-              NotificationConfiguration={
-                'LambdaFunctionConfigurations': [
-                  {
-                    'Id': notificationId,
-                    'LambdaFunctionArn': functionArn,
-                    'Events': [
-                      's3:ObjectCreated:*'
-                    ],
-                    'Filter': {
-                      'Key': {
-                        'FilterRules': [
-                          {
-                            'Name': 'suffix',
-                            'Value': 'pdf'
-                          }
-                        ]
-                      }
-                    }
-                  },
-                ]
-              }
-            )
-            return notificationResponse
-
-          def create(properties, physical_id):
-            bucketName = properties['S3Bucket']
-            notificationId = properties['NotificationId']
-            functionArn = properties['FunctionARN']
-            response = addBucketNotification(bucketName, notificationId, functionArn)
-            logger.info('AddBucketNotification response: %s' % json.dumps(response))
-            return cfnresponse.SUCCESS, physical_id
-
-          def update(properties, physical_id):
-            return cfnresponse.SUCCESS, None
-
-          def delete(properties, physical_id):
-            return cfnresponse.SUCCESS, None
-
-          def handler(event, context):
-            logger.info('Received event: %s' % json.dumps(event))
-
-            status = cfnresponse.FAILED
-            new_physical_id = None
-
-            try:
-              properties = event.get('ResourceProperties')
-              physical_id = event.get('PhysicalResourceId')
-
-              status, new_physical_id = {
-                'Create': create,
-                'Update': update,
-                'Delete': delete
-              }.get(event['RequestType'], lambda x, y: (cfnresponse.FAILED, None))(properties, physical_id)
-            except Exception as e:
-              logger.error('Exception: %s' % e)
-              status = cfnresponse.FAILED
-            finally:
-              cfnresponse.send(event, context, status, {}, new_physical_id)
-
-  ApplyNotification:
-    Type: Custom::ApplyNotification
-    Properties:
-      ServiceToken: !GetAtt ApplyBucketNotificationFunction.Arn
-      S3Bucket: !Ref createS3Bucket
-      FunctionARN: !GetAtt createESKeyPhraseIndex.Arn
-      NotificationId: S3ObjectCreatedEvent

@@ -11,13 +11,14 @@ from requests_aws4auth import AWS4Auth
 
 compr = boto3.client(service_name='comprehend')
 dynamodb = boto3.client('dynamodb')
+es_client = boto3.client('es')
 
 region = os.environ['AWS_REGION'] # 'us-west-2'
 service = 'es'
 credentials = boto3.Session().get_credentials()
 
-host = os.environ['esDomain']
-contact_details_table = os.environ['table_name']
+domain_name = os.environ['ES_DOMAIN']
+contact_details_table = os.environ['CONTACT_TABLE_NAME']
 
 def connectES():
     awsauth = AWS4Auth(credentials.access_key, 
@@ -25,7 +26,10 @@ def connectES():
     region, service,
     session_token=credentials.token)
     try:
-        es = Elasticsearch(hosts=[{'host': host, 'port': 443}], http_auth = awsauth,
+        response = es_client.describe_elasticsearch_domain(DomainName=domain_name)
+        es_host = response['DomainStatus']['Endpoint']
+
+        es = Elasticsearch(hosts=[{'host': es_host, 'port': 443}], http_auth = awsauth,
         use_ssl=True, verify_certs=True, connection_class=RequestsHttpConnection)
         return es
     except Exception as err:
