@@ -6,19 +6,26 @@ The first half of the ECOMM-911 call center virtual assistant Proof of concept -
 
 ## Deployment Steps
 
+Some system requirements before starting deployment:
+* AWS SAM installed on your system, details on the installation can be found [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
+* Python3.8 installed and added to PATH (you can select this in the installer), download the installer [here](https://www.python.org/downloads/release/python-387/). Run ```pip install wheel``` in the command line if there are any issues with ```sam build``` resolving dependencies.
+
 1) Create an S3 bucket for deployment:
 ```
-aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration  --region <YOUR-REGION>
+aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION>
 ```
-2) Make sure to have AWS SAM setup, details can be found [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html). Run the following SAM command in this subdirectory to build and package the application onto the created S3 bucket in the first step:
+3) Run the following SAM commands in this subdirectory to build and package the application onto the created S3 bucket in the first step:
 ```
-sam build && sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file <TEMPLATE-NAME>
+sam build
 ```
-3) From CloudFormation in the AWS Console, Select **With new resources (standard)** under the **Create Stack** dropdown. Then, select the **Upload a template file** option under **Template Source** and upload the newly generated output template file from AWS SAM.
-4) Change the default parameters if needed, and click **Create Change Set** and then **Execute** in the top right corner when the change set is complete to start stack creation. The stack will take some time to finish, due to more time needed creating the Elasticsearch cluster.
-5) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
+```
+sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file <TEMPLATE-NAME> --profile <AWS-PROFILE>
+```
+4) From CloudFormation in the AWS Console, Select **With new resources (standard)** under the **Create Stack** dropdown. Then, select the **Upload a template file** option under **Template Source** and upload the newly generated output template file from AWS SAM.
+5) Change the default parameters if needed, and click **Create Change Set** and then **Execute** in the top right corner when the change set is complete to start stack creation. The stack will take some time to finish, due to more time needed creating the Elasticsearch cluster.
+6) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](../images/enable-dynamodb-trigger.png)
-6) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
+7) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](../images/add-trigger.png)
 
 ## Accessing Kibana
@@ -32,8 +39,7 @@ You can use Kibana as a search and visualization tool for your Elasticsearch clu
 
 ## State Machine Diagram
 ![alt text](../images/state-machine.png)
-This workflow is designed to integrate with the frontend behaviour. Invocations of the state machine workflow are tied to changes in the Amplify API, which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. In the 'Start Transcribe' stage, a transcription job for the uploaded audio file will be started with PII redaction enabled and its status will be checked and waited until it finishes. The resulting transcript available via URI instead of being written to an S3 bucket, will attempt to be chunked up according to speaker, and will undergo entity and key phrase extraction in the following step. Finally, the transcript, phrases and other metadata will be indexed into the ES cluster.
-
+This workflow is designed to integrate with the frontend architecture; invocations of the state machine workflow are tied to changes in the Amplify API, specifically the , which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. In the 'Start Transcribe' stage, a transcription job for the uploaded audio file will be started with PII redaction enabled and its status will be checked and waited until it finishes. The resulting transcript is available via URI instead of being written to an S3 bucket. In the 'Process Transcription' stage, the transcript will try to be chunked up according to speaker, and will undergo entity and key phrase extraction. Finally, the transcript, phrases and other metadata will be indexed into the ES cluster.
 
 ## Further Recommendations
 

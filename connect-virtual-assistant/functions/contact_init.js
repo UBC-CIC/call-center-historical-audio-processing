@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
- *  Code mostly taken from https://github.com/amazon-connect/amazon-connect-realtime-transcription                                                                                                 *
+ *  Code used and modified from https://github.com/amazon-connect/amazon-connect-realtime-transcription                                                                                                 *
  **********************************************************************************************************************/
 
 var AWS = require("aws-sdk");
@@ -13,9 +13,10 @@ exports.handler = (event, context, callback) => {
 
     //Sets the timezone environment variable for the Lambda function to east coast. You can change this to your preferred timezone, or remove this line to use UTC
     process.env.TZ = "America/New_York";
-    var tableName = process.env.table_name;
-    var currentTimeStamp = new Date().toString();
-    var currentDate = new Date().toLocaleDateString();
+    let tableName = process.env.table_name;
+    let currentTimeStamp = new Date().toString();
+    let currentDate = new Date().toLocaleDateString();
+    let TTL = Math.round(Date.now() / 1000) + 3 * 24 * 3600;
 
     //set up the database query to be used to update the customer information record in DynamoDB
     var paramsUpdate = {
@@ -27,10 +28,11 @@ exports.handler = (event, context, callback) => {
         ExpressionAttributeValues: {
             ":var1": customerPhoneNumber,
             ":var2": currentDate,
-            ":var3": currentTimeStamp
+            ":var3": currentTimeStamp,
+            ":var4": TTL
         },
 
-        UpdateExpression: "SET customerPhoneNumber = :var1, callDate = :var2, callTimestamp = :var3"
+        UpdateExpression: "SET customerPhoneNumber = :var1, callDate = :var2, callTimestamp = :var3, ExpiresOn = :var4"
     };
 
     //update the customer record in the database with the new call information using the paramsUpdate query we setup above:

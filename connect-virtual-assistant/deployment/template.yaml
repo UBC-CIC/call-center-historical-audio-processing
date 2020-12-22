@@ -229,6 +229,9 @@ Resources:
         PointInTimeRecoveryEnabled: True
       SSESpecification:
         SSEEnabled: True
+      TimeToLiveSpecification:
+        AttributeName:  "ExpiresOn"
+        Enabled:  True
 
   KvsTranscribeRole:
     Type: "AWS::IAM::Role"
