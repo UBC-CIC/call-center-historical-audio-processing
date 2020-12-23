@@ -14,8 +14,10 @@ You will need the following resources before deploying:
 2) From the AWS Amplify page in the AWS Console, select **Host web app** under the **New app** dropdown, and select Github as the repository option.
 3) After authenticating into your Github account, select the forked repository under the repository dropdown. Leave the default branch as is.
 ![alt text](./images/frontend-select-repo.png)
-4) On the next page, keep the default build settings, and this is where you define any environment variables under Advanced settings. You can rename the app name if you wish.
-5) Review the settings and click **Save and deploy**, and wait for the deployment build to complete, which will take some time.
+4) On the next page, **App build and test settings**, keep the default build settings, and this is where you define any environment variables under Advanced settings. You can rename the app name.
+5) Select **Create new environment** under the **Select a backend environment** dropdown, and select your AWS Amplify service role in the following dropdown if one exists; if not, Select 'Create new role' and quickly create one using the default settings and refresh the role selection.
+![alt text](./images/frontend-build-settings.png)
+6) Review the settings and click **Save and deploy**, and wait for the deployment build to complete, which will take some time.
 ![alt text](./images/frontend-success.png)
 
 Within Amplify Console, you should see an auto-generated URL under **Frontend environment** - that is the URL used to access the frontend build. You can now create your user accounts and log in via the URL.

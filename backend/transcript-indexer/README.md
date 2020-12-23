@@ -24,9 +24,9 @@ sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file <TEMPLATE-NAME
 4) From CloudFormation in the AWS Console, Select **With new resources (standard)** under the **Create Stack** dropdown. Then, select the **Upload a template file** option under **Template Source** and upload the newly generated output template file from AWS SAM.
 5) Change the default parameters if needed, and click **Create Change Set** and then **Execute** in the top right corner when the change set is complete to start stack creation. The stack will take some time to finish, due to more time needed creating the Elasticsearch cluster.
 6) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
-![alt text](../images/enable-dynamodb-trigger.png)
+![alt text](../../images/enable-dynamodb-trigger.png)
 7) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
-![alt text](../images/add-trigger.png)
+![alt text](../../images/add-trigger.png)
 8) Now, refer to the [connect stack deployment guide](../connect-virtual-assistant/README.md).
 
 ## Accessing Kibana
@@ -35,11 +35,11 @@ You can use Kibana as a search and visualization tool for your Elasticsearch clu
 
 1) Click on the Kibana URL and use the given credentials to login. Note that you have to specify a new password when logging in for the first time.
 2) Click on **Discover** (The compass icon on the left sidebar) and type 'transcripts' in the index pattern field, and this should match the index created in the Elasticsearch cluster. Click on **Create Index Pattern** in the next step.
-![alt text](../images/kibana-create-index-pattern.png)
+![alt text](../../images/kibana-create-index-pattern.png)
 3) You will be taken to the management screen where you can view all the fields in the ```transcripts``` index. Navigating back to the Discover panel, you will be able to view all the indexed documents and perform queries in the search bar.
 
 ## State Machine Architecture
-![alt text](../images/state-machine.png)
+![alt text](../../images/state-machine.png)
 This workflow is designed to integrate with the frontend architecture; invocations of the state machine workflow are tied to changes in the Amplify API, specifically the , which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. Note that the supported audio file types are: .wav, .mp3, .mp4, and .flac. \
 In the 'Start Transcribe' stage, a transcription job for the uploaded audio file will be started with PII redaction enabled and its status will be checked and waited until it finishes. The resulting transcript is available via URI instead of being written to an S3 bucket. In the 'Process Transcription' stage, the transcript will try to be chunked up according to speaker, and will undergo entity and key phrase extraction. Finally, the transcript, phrases and other metadata will be indexed into the ES cluster.
 

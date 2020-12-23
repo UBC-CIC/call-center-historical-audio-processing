@@ -14,11 +14,11 @@ The second half of the ECOMM-911 call center virtual assistant proof of concept 
 8) Click **Create Change Set** and then **Execute**, and wait for the stack to finish deployment.
 9) A new S3 bucket will be created during deployment and will contain a sample contact flow to be imported into AWS Connect. Navigate to the newly created S3 bucket and download the contact flow, which is essentially a JSON file.
 10) Login to your AWS Connect instance. Select **Contact Flows** under Routing on the left sidebar, and click on **Create Contact Flow**.
-![alt text](../images/create-contact-flow.png)
+![alt text](../../images/create-contact-flow.png)
 11) Select **Import flow (beta)** under the Save dropdown and select the downloaded file. Save and publish.
-![alt text](../images/import-connect-contact-flow.png)
+![alt text](../../images/import-connect-contact-flow.png)
 12) Select **Phone numbers** under the Routing on the left sidebar, then click **Claim a number**. Select a number (or use a ported phone number) and select the recently created contact flow under Additional Options and press **Save** to map the contact flow to the number. Calling the number will trigger the contact flow and start transcription.
-![alt text](../images/claim-phone-number.png)
+![alt text](../../images/claim-phone-number.png)
 
 Contact flows define flow logic in AWS Connect; the sample contact flow created during deployment has all the functionality needed to initialize audio streaming and trigger the transcribe lambda function and the rest of the workflow. The caller is transferred to a basic queue as default behaviour after triggering, so handling incoming callers is expected to be customized and integrated according to the user's needs.
 
