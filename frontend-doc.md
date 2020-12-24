@@ -1,4 +1,4 @@
-# ECOMM 911 Virtual Assistant - Frontend
+# E-Comm 911 Virtual Assistant - Frontend
 
 ## Project Overview
 
@@ -24,7 +24,10 @@ Within Amplify Console, you should see an auto-generated URL under **Frontend en
 
 ## Architecture
 
-Using AWS Amplify, this project has the following configured backend resources: Cognito authentication featuring user pools, an S3 bucket configured with Amplify Storage to store audio files, and a GraphQL-based API that writes file metadata to DynamoDB tables in response to file upload events to send it over to the transcribe workflow. These DynamoDB tables managed by the GraphQL Schema are TTL-enabled by importing a third-party transformer. \
+Using AWS Amplify, this project has the following configured backend resources:
+* [Cognito authentication](https://docs.amplify.aws/lib/auth/getting-started/q/platform/js) featuring user pools
+* an S3 bucket configured with [Amplify Storage](https://docs.amplify.aws/lib/storage/overview/q/platform/js) to store audio files, [link to StorageClass documentation](https://aws-amplify.github.io/amplify-js/api/classes/storageclass.html)
+* GraphQL-based API that writes file metadata to DynamoDB tables in response to file upload events to send it over to the transcribe workflow. These DynamoDB tables managed by the GraphQL Schema are TTL-enabled by importing a [third-party transformer](https://github.com/flogy/graphql-ttl-transformer). \
 Metadata can also stored with the S3 object using the Metadata config field in the Amplify.put call, and will have the prefix ```"x-amz-meta-"```.
 
 ## Logging in

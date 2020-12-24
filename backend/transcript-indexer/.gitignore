@@ -2,3 +2,4 @@
 packaged.yaml
 
 /.aws-sam
+out.yaml

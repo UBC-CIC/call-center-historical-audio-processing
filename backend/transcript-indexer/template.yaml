@@ -431,3 +431,8 @@ Outputs:
   KibanaUrl:
     Description: A hyperlink to the Kibana tool
     Value: !Sub https://${ESDomain.DomainEndpoint}/_plugin/kibana/
+  ESDomainOutputName:
+    Description: The name of the deployed Elasticsearch domain
+    Value: !Ref ESDomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-ESDomainName"

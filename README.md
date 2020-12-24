@@ -1,8 +1,8 @@
-# ECOMM 911 Connect Virtual Assistant
+# E-Comm 911 Connect Virtual Assistant
 
 ## Project Summary
 
-The Ecomm 911 Connect Virtual Assistant tool serves to assist non-emergency call takers in identifying the nature and scenario of incoming calls and moving ahead with the correct standard procedures, leading to increase in overall efficiency and accuracy in call-taking. Procedure recommendations are based on document similarity in ElasticSearch between the currently transcribed call and transcripts of audio call files provided by the user. 
+The E-Comm 911 Connect Virtual Assistant tool serves to assist non-emergency call takers in identifying the nature and scenario of incoming calls and moving ahead with the correct standard procedures, leading to increase in overall efficiency and accuracy in call-taking. Procedure recommendations are based on document similarity in ElasticSearch between the currently transcribed call and transcripts of audio call files provided by the user. 
 
 ## High-level Architecture
 

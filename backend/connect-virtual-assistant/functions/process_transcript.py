@@ -85,7 +85,7 @@ def handler(event, context):
                                 'transcript'
                             ],
                             "like": transcript,
-                            "min_term_freq": 2,
+                            "min_term_freq": 1,
                             "min_doc_freq": 2
                         }
                     }
