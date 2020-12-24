@@ -12,26 +12,26 @@ Some system requirements before starting deployment:
 
 1) Create an S3 bucket for deployment:
 ```
-aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION> --profile <YOUR-SSO-PROFILE>
+aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION> --profile <YOUR-PROFILE>
 ```
 3) Run the following SAM commands in this subdirectory to build and package the application onto the created S3 bucket in the first step:
 ```
 sam build
 ```
 ```
-sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --profile <YOUR-SSO-PROFILE>
+sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --profile <YOUR-PROFILE>
 ```
-4) Run the following SAM command to deploy the application:
+4) Run the following SAM command to deploy the application. You can add the optional ```--guided``` flag for AWS SAM to provide step-by-step prompts for the deployment process:
 ```
-sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-SSO-PROFILE> --region <YOUR-REGION> --guided
+sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
 ```
-You can add the optional ```--guided``` flag for AWS SAM to provide step-by-step prompts for the deployment process.
 5) If ```--guided``` flag is used, modify the default parameters when prompted if you want (otherwise press Enter to skip), and confirm the settings from the change set to start stack creation. The stack will take some time to finish deployment, due to creating the Elasticsearch cluster.
 6) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](../../images/enable-dynamodb-trigger.png)
 7) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](../../images/add-trigger.png)
-8) Now, refer to the [connect stack deployment guide](../connect-virtual-assistant/README.md).
+
+Now, refer to the [Connect stack deployment guide](../connect-virtual-assistant/README.md).
 
 ## Accessing Kibana
 
@@ -41,9 +41,11 @@ You can use Kibana as a search and visualization tool for your Elasticsearch clu
 2) Click on **Discover** (The compass icon on the left sidebar) and type 'transcripts' in the index pattern field, and this should match the index created in the Elasticsearch cluster. Click on **Create Index Pattern** in the next step.
 ![alt text](../../images/kibana-create-index-pattern.png)
 3) You will be taken to the management screen where you can view all the fields in the ```transcripts``` index. Navigating back to the Discover panel, you will be able to view all the indexed documents and perform queries in the search bar.
+![alt text](../../images/kibana-document-query.png)
 
 ## State Machine Architecture
 ![alt text](../../images/state-machine.png)
+
 This workflow is designed to integrate with the frontend architecture; invocations of the state machine workflow are tied to changes in the Amplify API, specifically the , which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. Note that the supported audio file types are: .wav, .mp3, .mp4, and .flac.
 * In the 'Start Transcribe' step, a transcription job for the uploaded audio file will be started with PII redaction enabled.
 * The status of the job will be checked and waited in the 'Check Transcribe Status' step and wait loop until the job terminates.
