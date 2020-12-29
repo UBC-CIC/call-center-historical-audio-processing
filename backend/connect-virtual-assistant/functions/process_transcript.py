@@ -11,6 +11,7 @@ from requests_aws4auth import AWS4Auth
 
 compr = boto3.client(service_name='comprehend')
 dynamodb = boto3.resource('dynamodb')
+dynamodb_client = boto3.client(service_name='dynamodb')
 es_client = boto3.client('es')
 
 TRANSCRIPT_INDEX = 'transcripts'
@@ -21,6 +22,7 @@ credentials = boto3.Session().get_credentials()
 
 domain_name = os.environ['ES_DOMAIN']
 contact_details_table = os.environ['CONTACT_TABLE_NAME']
+jurisdictions_table = os.environ['JURISDICTION_TABLE_NAME']
 
 def connectES():
     awsauth = AWS4Auth(credentials.access_key, 
@@ -30,7 +32,6 @@ def connectES():
     try:
         response = es_client.describe_elasticsearch_domain(DomainName=domain_name)
         es_host = response['DomainStatus']['Endpoint']
-
         es = Elasticsearch(hosts=[{'host': es_host, 'port': 443}], http_auth = awsauth,
         use_ssl=True, verify_certs=True, connection_class=RequestsHttpConnection)
         return es
@@ -40,8 +41,6 @@ def connectES():
         exit(3)
 
 def handler(event, context):
-    print("DynamoDB streams invoked, starting comprehend Lambda")
-
     for record in event.get('Records'):
         if record.get('eventName') in ('INSERT', 'MODIFY'):
             # Retrieve the item attributes from the stream record
@@ -51,11 +50,12 @@ def handler(event, context):
             transcript = record['dynamodb']['NewImage']['Transcript']['S']
             is_partial = record['dynamodb']['NewImage']['IsPartial']['BOOL']
 
-            locations = []
+            entities = []
             key_phrases = []
+            jurisdictions = []
             SOPs = []
 
-            # designate a time period within the realtime call to call comprehend and query ElasticSearch
+            # Designate a time period within the realtime call to call comprehend and query ES
             if (float(end_time) >= 60 and float(end_time) <= 120):
                 compr_entities_result = compr.detect_entities(Text=transcript, LanguageCode='en')
                 compr_phrases_result = compr.detect_key_phrases(Text=transcript, LanguageCode='en')
@@ -66,15 +66,15 @@ def handler(event, context):
 
                 for s in EntityList:
                     score = float(s.get("Score"))*100
-                    if (score >= accuracy and s.get("Type") == "LOCATION"):
-                        locations.append(s.get("Text").strip('\t\n\r'))
+                    if (score >= accuracy):
+                        entities.append(s.get("Text").strip('\t\n\r'))
 
                 for s in KeyPhraseList:
                     score = float(s.get("Score"))*100
                     if (score >= accuracy):
                         key_phrases.append(s.get("Text").strip('\t\n\r'))
 
-                print(locations)
+                # filter entity list with jurisdiction table here
 
                 es = connectES()
 
@@ -101,7 +101,7 @@ def handler(event, context):
                     SOPs.append(hit['_source']['procedure'])
 
                 SOP = ', '.join(SOPs) if len(SOPs) > 0 else 'Undetermined'
-                jurisdiction = 'Undetermined' if len(locations) == 0 else locations[0]
+                jurisdiction = 'Undetermined' if len(jurisdictions) == 0 else jurisdictions[0]
 
                 table = dynamodb.Table(contact_details_table)
                 table.update_item(

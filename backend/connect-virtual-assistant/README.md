@@ -43,11 +43,13 @@ As mentioned before, use of ElasticSearch is integrated for SOP (Standard Operat
 The [elasticsearch-py client](https://elasticsearch-py.readthedocs.io/en/v7.10.1/) is imported and used to connect into the ElasticSearch domain, create the index and insert new documents for audio call files into the index, as well as performing search queries on the index to retrieve results during real-time calls. \
 For the query, the ["More Like This" query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-mlt-query.html), which performs searches based on likeness to a given input, is quite suitable for this scenario. more information on this query and its input parameters can found in the elasticsearch query DSL docs, linked above. Currently, the 'like' parameter is being set to the full caller-side transcript, although an array of extracted key phrases can also work but may not be accurate as some important words are not detected as key phrases by Comprehend. Term selection parameters are edited so that more terms in the input will be considered for 'more like this' comparison, and stop words may also be defined.
 
-## Further Recommendations
-* Retrieved entities will need be validated against pre-set jurisdictions before they are returned as jurisdiction locations. Allowing users to modify a DynamoDB table that holds these values that can also be modified by basic CRUD operations could be a solution.
-* Resolve how the user will be able to see the results from the ongoing call. This could be as simple as exposing the ```ContactDetails``` table to the frontend via API Gateway.
+## Next Steps - Tech Team
+The next steps for finishing this project would be the first two points.
+* Detected entities from Comprehend will need be validated against pre-set jurisdiction entries before they are written as jurisdiction locations. Allowing users to modify a DynamoDB table that holds these values that can also be modified by basic CRUD operations via API Gateway could be a potential solution; A table for this been created in the CFN template.
+* In addition, we need to resolve how the user will be able to view the results from ongoing call in real time. This could be as simple as exposing the contacts of the ```ContactDetails``` DynamoDB table to the frontend via API Gateway.
 * Custom vocabularies may be able to reinforce streaming transcriptions, similar to transcription jobs.
-* The Elasticsearch query may be changed or enhanced.
+* Parameters in the Elasticsearch query may be changed or enhanced to improve the search.
+* Consider to add any security measures
 
 ## Credits
-This portion of the solution was largely based on and modified from the [Amazon Connect Realtime Transcription Project](https://github.com/amazon-connect/amazon-connect-realtime-transcription) by the team at the UBC Cloud Innovation Centre.
+This portion of the solution was based on and modified from the [Amazon Connect Realtime Transcription Project](https://github.com/amazon-connect/amazon-connect-realtime-transcription) by the team at the UBC Cloud Innovation Centre.

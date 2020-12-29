@@ -26,6 +26,10 @@ Parameters:
     Type: String
     Default:  contactDetails
     Description:  The name of the DynamoDB Table where contact details will be written (Ensure you do not have a table with this name already).
+  jurisdictionsTable:
+    Type: String
+    Default: Jurisdictions
+    Description: The name of the DynamoDB Table where valid jurisdiction locations will be stored.
   existingS3BucketName:
     Type: String
     Description: The name of the S3 bucket that contains the zipped lambda deployment packages
@@ -189,6 +193,23 @@ Resources:
       TimeToLiveSpecification:
         AttributeName:  "ExpiresOn"
         Enabled:  True
+
+  jurisdictionsDDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:  !Ref jurisdictionsTable
+      AttributeDefinitions:
+        -
+          AttributeName: "JurisdictionId"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "JurisdictionId"
+          KeyType: "S"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: True
+      SSESpecification:
+        SSEEnabled: True
 
   KvsTranscribeRole:
     Type: "AWS::IAM::Role"
@@ -486,11 +507,14 @@ Resources:
               -
                 Effect: "Allow"
                 Action:
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
                   - "dynamodb:GetItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub ${contactDetailsDDBTable.Arn}
+                  - !Sub ${jurisdictionsDDBTable.Arn}
               -
                 Effect: "Allow"
                 Action:
@@ -596,6 +620,7 @@ Resources:
       Environment:
         Variables:
           CONTACT_TABLE_NAME: !Ref contactDetailsTable
+          JURISDICTION_TABLE_NAME: !Ref jurisdictionsTable
           ES_DOMAIN:
             Fn::ImportValue: !Sub "${audioFileTranscribeStack}-ESDomainName"
       Code:
@@ -607,7 +632,7 @@ Resources:
     Properties:
       EventSourceArn: !GetAtt transcriptSegmentsDDBTable.StreamArn
       FunctionName: !GetAtt comprehendTranscribedAudioText.Arn
-      StartingPosition: "TRIM_HORIZON"
+      StartingPosition: "LATEST"
       Enabled: True
 
   # Will create a DynamoDB trigger from the call taker transcription table
@@ -616,7 +641,7 @@ Resources:
   #   Properties:
   #     EventSourceArn: !GetAtt transcriptSegmentsToCustomerDDBTable.StreamArn
   #     FunctionName: !GetAtt comprehendTranscribedAudioText.Arn
-  #     StartingPosition: "TRIM_HORIZON"
+  #     StartingPosition: "LATEST"
   #     Enabled: True
 
   invokeContactFlowCreator:

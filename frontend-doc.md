@@ -36,3 +36,8 @@ Metadata can also stored with the S3 object using the Metadata config field in t
 
 Cognito is used for authenticate users into the frontend and integrates with . Users will need to input their email address, name and a strong password to create an account.
 After account creation, users will need to verify their account by inputting the 6-digit verification code that was sent to their provided email address before being able to log in to the system.
+
+## Next Steps
+
+* Expand the frontend side to include access to backend DynamoDB tables (result table, jurisdiction table) via API Gateway calls.
+* If possible, enhance the input form page to support uploading multiple audio files at once.
