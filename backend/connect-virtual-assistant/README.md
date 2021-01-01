@@ -46,10 +46,12 @@ For the query, the ["More Like This" query](https://www.elastic.co/guide/en/elas
 ## Next Steps - Tech Team
 The next steps for finishing this project would be the first two points.
 * Detected entities from Comprehend will need be validated against pre-set jurisdiction entries before they are written as jurisdiction locations. Allowing users to modify a DynamoDB table that holds these values that can also be modified by basic CRUD operations via API Gateway could be a potential solution; A table for this been created in the CFN template.
-* In addition, we need to resolve how the user will be able to view the results from ongoing call in real time. This could be as simple as exposing the contacts of the ```ContactDetails``` DynamoDB table to the frontend via API Gateway.
+* In addition, we need to resolve how the user will be able to view the results from ongoing call in real time. This could be as simple as exposing the contacts of the `ContactDetails` DynamoDB table to the frontend via API Gateway. Currently there are some resources defined in this `template.yaml` file that will deploy a REST API that will invoke a lambda function that will supposedly scan the `ContactDetails` table as an example, but final architecture design is TBD.
+* Mentioned above, but AWS Comprehend key phrase extraction has some trouble with detecting verbs / action words that may have crucial meanings in interpreting calls.
+* Accuracy of extracting locations via AWS Comprehend will depend on voice quality and clarity in calls. In addition, not all city names will be detected as location type entities. 
 * Custom vocabularies may be able to reinforce streaming transcriptions, similar to transcription jobs.
 * Parameters in the Elasticsearch query may be changed or enhanced to improve the search.
-* Consider to add any security measures
+* Consider to add any security measures in the project.
 
 ## Credits
 This portion of the solution was based on and modified from the [Amazon Connect Realtime Transcription Project](https://github.com/amazon-connect/amazon-connect-realtime-transcription) by the team at the UBC Cloud Innovation Centre.
