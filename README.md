@@ -15,4 +15,7 @@ The E-Comm 911 Connect Virtual Assistant tool serves to assist non-emergency cal
 [AWS Connect Call Transcription Stack Deployment](./backend/connect-virtual-assistant/README.md)
 
 ## Credits
-This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams and with quoted usage and reference to some AWS sample template projects. 
+This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams and with quoted usage and reference to some AWS sample template projects.
+
+## License
+This project is distributed under the [MIT License](./LICENSE).
