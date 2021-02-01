@@ -33,6 +33,7 @@ class InvalidInputError(ValueError):
 
 
 # Custom encoder for datetime objects
+# TODO: Write better documentation for this and find where it is used
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
@@ -40,18 +41,23 @@ class MyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-# limit the number of retries submitted by boto3 because Step Functions will handle the exponential retries more efficiently
+# Limit the number of retries submitted by boto3 because Step Functions will
+# handle the exponential retries more efficiently
 config = Config(
     retries=dict(
         max_attempts=2
     )
 )
 
-client = boto3.client('transcribe', config=config)
+transcribe_client = boto3.client('transcribe', config=config)
 
 
-# Entrypoint for lambda funciton
 def lambda_handler(event, context):
+    """
+    Upon successful upload of an audio file, this lambda handler takes the audio and
+    starts an audio transcription request via Amazon Transcribe
+    """
+    # Get AWS region
     session = boto3.session.Session()
     region = session.region_name
 
@@ -65,14 +71,15 @@ def lambda_handler(event, context):
     bucket = event['bucketName']
     key = event['bucketKey']
 
+    # Get the appropriate media file format
     content_type = event['fileType']
     if content_type not in CONTENT_TYPE_TO_MEDIA_FORMAT:
-        raise InvalidInputError(content_type + " is not supported audio type.")
-    media_type = CONTENT_TYPE_TO_MEDIA_FORMAT[content_type]
-    logger.info("media type: " + content_type)
+        raise InvalidInputError(f"{content_type} is not supported audio type.")
+    media_format = CONTENT_TYPE_TO_MEDIA_FORMAT[content_type]
+    logger.info(f"media type: {content_type}")
 
     # Assemble the url for the object for transcribe. It must be an s3 url in the region
-    url = "https://s3-" + region + ".amazonaws.com/" + bucket + "/" + key
+    url = f"https://s3-{region}.amazonaws.com/{bucket}/{key}"
 
     try:
         settings = {
@@ -82,11 +89,11 @@ def lambda_handler(event, context):
         }
 
         # Call the AWS SDK to initiate the transcription job.
-        response = client.start_transcription_job(
+        response = transcribe_client.start_transcription_job(
             TranscriptionJobName=jobname,
             LanguageCode='en-US',
             Settings=settings,
-            MediaFormat=media_type,
+            MediaFormat=media_format,
             Media={
                 'MediaFileUri': url
             },
@@ -96,22 +103,21 @@ def lambda_handler(event, context):
             }
         )
         isSuccessful = "TRUE"
-    except client.exceptions.BadRequestException as e:
+
+    # TODO create specific exceptions with proper exception recovery
+    except transcribe_client.exceptions.BadRequestException as e:
+        # Issues in the configuration of the transcribe request
+        logger.error(str(e))
+        raise ThrottlingException(e)
+    except transcribe_client.exceptions.LimitExceededException as e:
         # There is a limit to how many transcribe jobs can run concurrently. If you hit this limit,
         # return unsuccessful and the step function will retry.
         logger.error(str(e))
         raise ThrottlingException(e)
-    except client.exceptions.LimitExceededException as e:
-        # There is a limit to how many transcribe jobs can run concurrently. If you hit this limit,
-        # return unsuccessful and the step function will retry.
+    except transcribe_client.exceptions.ClientError as e:
         logger.error(str(e))
         raise ThrottlingException(e)
-    except client.exceptions.ClientError as e:
-        # Return the transcription job and the success code
-        # There is a limit to how many transcribe jobs can run concurrently. If you hit this limit,
-        # return unsuccessful and the step function will retry.
-        logger.error(str(e))
-        raise ThrottlingException(e)
+    # Return the transcription job and the success code
     return {
         "success": isSuccessful,
         "transcribeJob": jobname

@@ -59,12 +59,16 @@ es = Elasticsearch(
 
 # Entry point into the lambda function
 def lambda_handler(event, context):
+    """
+    Lambda handler executed after transcription is processed. This function takes the the processed transcription
+    and indexes it into the ElasticSearch
+    """
     fullCallTranscriptS3Location = event["processedTranscription"]
     index_transcript(es, event, fullCallTranscriptS3Location)
 
     if isDebugMode != 'TRUE':
         response = s3_client.delete_object(Bucket=event['bucketName'], Key=event['bucketKey'])
-        
+
     return
 
 
@@ -75,6 +79,8 @@ def index_transcript(es, event,  fullCallTranscriptS3Location):
 
     s3_location = "s3://" + event['bucketName'] + "/" + event['bucketKey']
 
+    # Metadata of the processed transcript that is indexed in elasticsearch
+    # TODO: Check for refinement where possible
     doc = {
         'audio_type': event['fileType'],
         'name': event['fileName'],

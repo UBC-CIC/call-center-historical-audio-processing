@@ -11,12 +11,17 @@ logger.setLevel(logging.INFO)
 cognito_idp_client = boto3.client('cognito-idp')
 
 
-# Generates a random ID
 def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
+    """
+    Helper function for kibana credential generation, generates a random ID
+    """
     return ''.join(random.choice(chars) for _ in range(size))
 
 
 def pwd_generator(size=8):
+    """
+    Helper function for kibana credential generation, generates a random password
+    """
     lowerChars = string.ascii_lowercase
     upperChars = string.ascii_uppercase
     digits = string.digits
@@ -27,6 +32,10 @@ def pwd_generator(size=8):
 
 
 def configure_cognito_lambda_handler(event, context):
+    """
+    Lambda function to setup Cognito user pool, only creates users
+    The responses for update and delete RequestType return a successful response by default
+    """
     logger.info("Received event: %s" % json.dumps(event))
 
     try:
@@ -34,6 +43,7 @@ def configure_cognito_lambda_handler(event, context):
             create_response = create(event)
             cfnresponse.send(event, context, cfnresponse.SUCCESS, create_response)
         if event['RequestType'] == 'Update':
+            # TODO Check if update request needs to be implemented
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
         elif event['RequestType'] == 'Delete':
             result_status = delete(event)
@@ -44,20 +54,32 @@ def configure_cognito_lambda_handler(event, context):
 
 
 def create(event):
+    """
+    Helper function for the lambda entry point, creates and returns a new user
+    """
     user_pool_id = event['ResourceProperties']['UserPoolId']
 
     kibana_user, kibana_password, kibana_email = get_user_credentials(event)
     add_user(user_pool_id, kibana_user, kibana_email, kibana_password)
     return {
         "KibanaUser": kibana_user,
-        "KibanaPassword": kibana_password}
+        "KibanaPassword": kibana_password
+    }
 
 
 def delete(event):
+    """
+    TODO: Delete not implemented, delete action always succeeds, check if needs to be implemented
+    """
     return cfnresponse.SUCCESS
 
 
 def get_user_credentials(event):
+    """
+    Tries to generate default username and email credentials if none exists
+    Generates a password, and then returns all 3 credentials
+    """
+    # If the username is present and is not an empty string, get the username, otherwise
     if 'kibanaUser' in event['ResourceProperties'] and event['ResourceProperties']['kibanaUser'] != '':
         kibanaUser = event['ResourceProperties']['kibanaUser']
     else:
@@ -66,13 +88,17 @@ def get_user_credentials(event):
     if 'kibanaEmail' in event['ResourceProperties'] and event['ResourceProperties']['kibanaEmail'] != '':
         kibanaEmail = event['ResourceProperties']['kibanaEmail']
     else:
-        kibanaEmail = id_generator(6) + '@example.com'
+        kibanaEmail = f'{id_generator(6)}@example.com'
 
     kibanaPassword = pwd_generator()
     return kibanaUser, kibanaPassword, kibanaEmail
 
 
 def add_user(userPoolId, kibanaUser, kibanaEmail, kibanaPassword):
+    """
+    Adds the input kibana user with their given credentials to the given Cognito user pool
+    and returns the cognito response
+    """
     cognito_response = cognito_idp_client.admin_create_user(
         UserPoolId=userPoolId,
         Username=kibanaUser,

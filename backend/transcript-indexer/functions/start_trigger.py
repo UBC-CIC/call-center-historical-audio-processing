@@ -8,12 +8,16 @@ import json
 from common_lib import id_generator
 
 def lambda_handler(event, context):
+    """
+    Start the state machine that triggers audio transcription and processing
+    This is the first lambda function that runs
+    """
     stepfunctions_client = boto3.client('stepfunctions')
     stepFunctionArn = os.environ['STEP_FUNCTION_ARN']
 
     for record in event.get('Records'):
         if record.get('eventName') in ('INSERT', 'MODIFY'):
-            
+
             # Retrieve the item attributes from the stream record
             Id = record['dynamodb']['NewImage']['id']['S']
             Procedure = record['dynamodb']['NewImage']['procedure']['S']

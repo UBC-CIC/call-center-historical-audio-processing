@@ -16,6 +16,9 @@ If the 'punctuation' parameter is specified this also includes punctuation.
 If you specify a KMS key ID then it will be encrypted, too
 """
 
+# TODO: This file may not have been used in the app ultimately, double check.
+# Usage is not present in the template file
+
 s3_client = boto3.client('s3')
 
 def send_response(request, response, status=None, reason=None):
