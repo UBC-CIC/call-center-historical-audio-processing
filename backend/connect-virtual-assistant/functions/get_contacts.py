@@ -7,7 +7,11 @@ import random
 dynamodb = boto3.resource('dynamodb')
 contact_details_table = os.environ['CONTACT_TABLE_NAME']
 
+
 def handler(event, context):
+    """
+    Returns the items present in the contact_details DynamoDB table
+    """
     try:
         table = dynamodb.Table(contact_details_table)
         scan_kwargs = {

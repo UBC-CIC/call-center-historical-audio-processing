@@ -46,7 +46,7 @@ You can use Kibana as a search and visualization tool for your Elasticsearch clu
 ## State Machine Architecture
 ![alt text](../../images/state-machine.png)
 
-This workflow is designed to integrate with the frontend architecture; invocations of the state machine workflow are tied to changes in the Amplify API, specifically the , which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. Note that the supported audio file types are: .wav, .mp3, .mp4, and .flac.
+This workflow is designed to integrate with the frontend architecture; invocations of the state machine workflow are tied to changes in the Amplify API, specifically the Transcripts DynamoDB Table, which contains metadata for the audio file that was uploaded to Amplify storage. The lambda that has the DynamoDB table created in the frontend assigned to it as a trigger will start the invocation of the state machine. Note that the supported audio file types are: .wav, .mp3, .mp4, and .flac.
 * In the 'Start Transcribe' step, a transcription job for the uploaded audio file will be started with PII redaction enabled.
 * The status of the job will be checked and waited in the 'Check Transcribe Status' step and wait loop until the job terminates.
 * The resulting transcript is available via URI instead of being written to an S3 bucket. In the 'Process Transcription' step, the transcript will try to be chunked up according to speaker, and will undergo entity and key phrase extraction.

@@ -7,13 +7,14 @@ package com.amazonaws.kvstranscribestreaming;
  *
  */
 
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.transcribestreaming.model.LanguageCode;
 
+import java.util.Optional;
+
 public class TranscriptionRequest {
+    /**
+     * Class to form the Amazon Transcribe Transcription Request
+     */
 
     String streamARN = null;
     String inputFileName = null;
@@ -24,6 +25,8 @@ public class TranscriptionRequest {
     Optional<Boolean> saveCallRecording = Optional.empty();
     boolean streamAudioFromCustomer = true;
     boolean streamAudioToCustomer = true;
+
+    // Getters and setters
 
     public String getStreamARN() {
 
@@ -122,6 +125,10 @@ public class TranscriptionRequest {
                 getStreamARN(), getStartFragmentNum(), getConnectContactId(), getLanguageCode(), isTranscriptionEnabled(), isSaveCallRecordingEnabled(), isStreamAudioFromCustomer(), isStreamAudioToCustomer());
     }
 
+    /**
+     * Validate the Transcription Request parameters in this class
+     * @throws IllegalArgumentException
+     */
     public void validate() throws IllegalArgumentException {
 
         // complain if both are provided

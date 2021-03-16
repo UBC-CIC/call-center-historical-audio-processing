@@ -1,8 +1,4 @@
-from __future__ import print_function
 import boto3
-import json
-import datetime
-from time import mktime
 import os
 from common_lib import id_generator
 import logging
@@ -16,9 +12,17 @@ if os.getenv('LOG_LEVEL') == 'DEBUG':
 else:
     logger.setLevel(logging.INFO)
 
+# Get AWS region and necessary clients
+REGION = boto3.session.Session().region_name
 
-class ThrottlingException(Exception):
-    pass
+# Limit the number of retries submitted by boto3 because Step Functions will
+# handle the exponential retries more efficiently
+CONFIG = Config(
+    retries=dict(
+        max_attempts=2
+    )
+)
+transcribe_client = boto3.client('transcribe', config=CONFIG)
 
 
 CONTENT_TYPE_TO_MEDIA_FORMAT = {
@@ -32,37 +36,22 @@ class InvalidInputError(ValueError):
     pass
 
 
-# Custom encoder for datetime objects
-# TODO: Write better documentation for this and find where it is used
-class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return int(mktime(obj.timetuple()))
-        return json.JSONEncoder.default(self, obj)
-
-
-# Limit the number of retries submitted by boto3 because Step Functions will
-# handle the exponential retries more efficiently
-config = Config(
-    retries=dict(
-        max_attempts=2
-    )
-)
-
-transcribe_client = boto3.client('transcribe', config=config)
+class TranscribeException(Exception):
+    # Does nothing for this file but stops the lambda from returning any values
+    pass
 
 
 def lambda_handler(event, context):
     """
     Upon successful upload of an audio file, this lambda handler takes the audio and
     starts an audio transcription request via Amazon Transcribe
+
+    :param event: All event variables including request params in `start_trigger.py` lambda
+    :return: A dict for the `check_transcribe.py` lambda handler
     """
-    # Get AWS region
-    session = boto3.session.Session()
-    region = session.region_name
 
     # Default to unsuccessful
-    isSuccessful = "FALSE"
+    is_successful = "FALSE"
 
     # Create a random name for the transcription job
     jobname = id_generator()
@@ -79,11 +68,10 @@ def lambda_handler(event, context):
     logger.info(f"media type: {content_type}")
 
     # Assemble the url for the object for transcribe. It must be an s3 url in the region
-    url = f"https://s3-{region}.amazonaws.com/{bucket}/{key}"
+    url = f"https://s3-{REGION}.amazonaws.com/{bucket}/{key}"
 
     try:
         settings = {
-            #'VocabularyName': event['vocabularyInfo']['name'],
             'ShowSpeakerLabels': True,
             'MaxSpeakerLabels': 2
         }
@@ -102,23 +90,23 @@ def lambda_handler(event, context):
                 'RedactionOutput': 'redacted'
             }
         )
-        isSuccessful = "TRUE"
+        is_successful = "TRUE"
 
-    # TODO create specific exceptions with proper exception recovery
     except transcribe_client.exceptions.BadRequestException as e:
         # Issues in the configuration of the transcribe request
         logger.error(str(e))
-        raise ThrottlingException(e)
+        raise TranscribeException(e)
     except transcribe_client.exceptions.LimitExceededException as e:
         # There is a limit to how many transcribe jobs can run concurrently. If you hit this limit,
         # return unsuccessful and the step function will retry.
         logger.error(str(e))
-        raise ThrottlingException(e)
+        raise TranscribeException(e)
     except transcribe_client.exceptions.ClientError as e:
         logger.error(str(e))
-        raise ThrottlingException(e)
-    # Return the transcription job and the success code
+        raise TranscribeException(e)
+
+    # Return the transcription job and the success code only if there are no errors in the transcription request
     return {
-        "success": isSuccessful,
+        "success": is_successful,
         "transcribeJob": jobname
     }

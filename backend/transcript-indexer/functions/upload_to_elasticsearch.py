@@ -6,7 +6,6 @@ import json
 import os
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch import helpers
 import logging
 import time
 
@@ -61,21 +60,25 @@ es = Elasticsearch(
 def lambda_handler(event, context):
     """
     Lambda handler executed after transcription is processed. This function takes the the processed transcription
-    and indexes it into the ElasticSearch
+    and indexes it into the ElasticSearch.
+    The transcript is deleted afterwards
     """
-    fullCallTranscriptS3Location = event["processedTranscription"]
-    index_transcript(es, event, fullCallTranscriptS3Location)
+    full_call_transcript_s3_location = event["processTranscriptionResult"]
+    index_transcript(es, event, full_call_transcript_s3_location)
 
     if isDebugMode != 'TRUE':
+        # Deletes the audio files in the amplify frontend storage bucket
         response = s3_client.delete_object(Bucket=event['bucketName'], Key=event['bucketKey'])
 
     return
 
 
-def index_transcript(es, event,  fullCallTranscriptS3Location):
-    response = s3_client.get_object(Bucket= fullCallTranscriptS3Location['bucket'], Key= fullCallTranscriptS3Location['key'])
+def index_transcript(elasticsearch, event, full_call_transcript_s3_location):
+    # Retrieves the transcribed text file stored in S3
+    response = s3_client.get_object(Bucket=full_call_transcript_s3_location['bucket'],
+                                    Key=full_call_transcript_s3_location['key'])
     file_content = response['Body'].read().decode('utf-8')
-    fullCallTranscript = json.loads(file_content)
+    full_call_transcript = json.loads(file_content)
 
     s3_location = "s3://" + event['bucketName'] + "/" + event['bucketKey']
 
@@ -88,9 +91,9 @@ def index_transcript(es, event,  fullCallTranscriptS3Location):
         'description': event['description'],
         'procedure': event['procedure'],
         'audio_s3_location': s3_location,
-        'transcript':  fullCallTranscript['transcript'],
-        'transcript_entities':  fullCallTranscript['transcript_entities'],
-        'key_phrases': fullCallTranscript['key_phrases']
+        'transcript':  full_call_transcript['transcript'],
+        'transcript_entities':  full_call_transcript['transcript_entities'],
+        'key_phrases': full_call_transcript['key_phrases']
     }
 
     logger.info("request")
@@ -98,8 +101,8 @@ def index_transcript(es, event,  fullCallTranscriptS3Location):
 
     # add the document to the index
     start = time.time()
-    res = es.index(index=ES_INDEX,
-                   body=doc, id=event['dynamoId'])
+    res = elasticsearch.index(index=ES_INDEX,
+                              body=doc, id=event['dynamoId'])
     logger.info("response")
     logger.info(json.dumps(res, indent=4))
     logger.info('REQUEST_TIME es_client.index {:10.4f}'.format(time.time() - start))

@@ -5,6 +5,9 @@
 var AWS = require("aws-sdk");
 var docClient = new AWS.DynamoDB.DocumentClient();
 
+/**
+ * Entry point for the lambda function
+ */
 exports.handler = (event, context, callback) => {
     console.log("Event From Amazon Connect: " + JSON.stringify(event));
 
@@ -48,6 +51,9 @@ exports.handler = (event, context, callback) => {
     getTempCredentials(callback, contactId);
 };
 
+/**
+ * Helper function to build and return REST response
+ */
 function buildResponse(isSuccess, data) {
     if (isSuccess) {
         return {

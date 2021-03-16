@@ -15,6 +15,9 @@ import java.util.Date;
  *
  */
 public class MetricsUtil {
+    /**
+     * Class for metrics recording of KinesisVideoStreams in AmazonCloudWatch
+     */
 
     private static String NAMESPACE = "KVSTranscribeStreamingLambda";
     private final AmazonCloudWatch amazonCloudWatch;

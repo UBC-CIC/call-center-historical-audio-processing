@@ -69,8 +69,8 @@ Outputs:
   createS3BucketSSLOP:
     Description:  Bucket contains all the call recordings and sample contactflow
     Value: !Join ['', ['https://', !GetAtt [createS3Bucket, DomainName]]]
-  apiGatewayInvokeURL:
-    Value: !Sub https://${apiGateway}.execute-api.${AWS::Region}.amazonaws.com/call
+#  apiGatewayInvokeURL:
+#    Value: !Sub https://${apiGateway}.execute-api.${AWS::Region}.amazonaws.com/call
 
 Resources:
   allowConnectToKvsConsumerTriggerLambda:
@@ -217,6 +217,21 @@ Resources:
         PointInTimeRecoveryEnabled: True
       SSESpecification:
         SSEEnabled: True
+
+  transcriptSegmentsTableParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt transcriptSegmentsDDBTable.Arn
+
+  transcriptSegmentsToCustomerTableParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt transcriptSegmentsToCustomerDDBTable.Arn
+
+  contactDetailsTableParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt contactDetailsDDBTable.Arn
 
   KvsTranscribeRole:
     Type: "AWS::IAM::Role"
@@ -511,6 +526,8 @@ Resources:
                   - "dynamodb:ListStreams"
                 Resource:
                   - !Sub ${transcriptSegmentsDDBTable.StreamArn}
+                  - !Sub ${transcriptSegmentsToCustomerDDBTable.StreamArn}
+                  - !Sub ${contactDetailsDDBTable.Arn}
               -
                 Effect: "Allow"
                 Action:
@@ -521,13 +538,16 @@ Resources:
                   - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub ${contactDetailsDDBTable.Arn}
-                  - !Sub ${jurisdictionsDDBTable.Arn}
+                  - !Sub ${transcriptSegmentsToCustomerDDBTable.Arn}
+                  - !Sub ${transcriptSegmentsDDBTable.Arn}
               -
                 Effect: "Allow"
                 Action:
                   - "comprehend:DetectEntities"
                   - "comprehend:DetectKeyPhrases"
                   - "comprehend:DetectSyntax"
+                  - "comprehend:BatchDetectKeyPhrases"
+                  - "comprehend:BatchDetectSyntax"
                 Resource: "*"
               -
                 Effect: "Allow"
@@ -545,7 +565,7 @@ Resources:
 
       Handler: "com.amazonaws.kvstranscribestreaming.KVSTranscribeStreamingLambda::handleRequest"
       Role: !GetAtt KvsTranscribeRole.Arn
-      Runtime: java8
+      Runtime: java11
       MemorySize: 512
       # maximum timeout is 15 minutes today
       Timeout: 900
@@ -627,6 +647,7 @@ Resources:
       Environment:
         Variables:
           CONTACT_TABLE_NAME: !Ref contactDetailsTable
+          CALL_TAKER_TABLE_NAME: !Ref transcriptSegmentsToCustomerTable
           JURISDICTION_TABLE_NAME: !Ref jurisdictionsTable
           ES_DOMAIN:
             Fn::ImportValue: !Sub "${audioFileTranscribeStack}-ESDomainName"
@@ -634,6 +655,7 @@ Resources:
         S3Bucket: !Ref existingS3BucketName
         S3Key: !Join ["", [!Ref existingS3Path, 'process_transcript.zip']]
 
+  # Will create a DynamoDB trigger from the call taker transcription table
   comprehendTranscribedAudioTextEventMapping:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties:
@@ -642,7 +664,7 @@ Resources:
       StartingPosition: "LATEST"
       Enabled: True
 
-  # Will create a DynamoDB trigger from the call taker transcription table
+
   # comprehendTranscribedAudioTextToCustomerEventMapping:
   #   Type: "AWS::Lambda::EventSourceMapping"
   #   Properties:
@@ -663,36 +685,36 @@ Resources:
       kvsTriggerFunction:
         !GetAtt kvsConsumerTrigger.Arn
 
-  apiGateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      ApiKeySourceType: HEADER
-      Description: An API Gateway with Lambda Integration to return result values
-      EndpointConfiguration:
-        Types:
-          - EDGE
-      Name: lambda-api
+#  apiGateway:
+#    Type: AWS::ApiGateway::RestApi
+#    Properties:
+#      ApiKeySourceType: HEADER
+#      Description: An API Gateway with Lambda Integration to return result values
+#      EndpointConfiguration:
+#        Types:
+#          - EDGE
+#      Name: lambda-api
 
-  apiGatewayRootMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      AuthorizationType: NONE
-      HttpMethod: GET
-      Integration:
-        Credentials: !GetAtt ApiGatewayIamRole.Arn
-        IntegrationHttpMethod: POST
-        Type: AWS_PROXY
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getContactDetails.Arn}/invocations
-      ResourceId: !GetAtt apiGateway.RootResourceId
-      RestApiId: !Ref apiGateway
-
-  apiGatewayDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn:
-      - apiGatewayRootMethod
-    Properties:
-      RestApiId: !Ref apiGateway
-      StageName: call
+#  apiGatewayRootMethod:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      AuthorizationType: NONE
+#      HttpMethod: GET
+#      Integration:
+#        Credentials: !GetAtt ApiGatewayIamRole.Arn
+#        IntegrationHttpMethod: POST
+#        Type: AWS_PROXY
+#        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getContactDetails.Arn}/invocations
+#      ResourceId: !GetAtt apiGateway.RootResourceId
+#      RestApiId: !Ref apiGateway
+#
+#  apiGatewayDeployment:
+#    Type: AWS::ApiGateway::Deployment
+#    DependsOn:
+#      - apiGatewayRootMethod
+#    Properties:
+#      RestApiId: !Ref apiGateway
+#      StageName: call
 
   DynamoDBRole:
     Type: "AWS::IAM::Role"
@@ -733,42 +755,42 @@ Resources:
                 Resource:
                   - !Sub ${contactDetailsDDBTable.Arn}
 
-  ApiGatewayIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: ''
-            Effect: 'Allow'
-            Principal:
-              Service:
-                - 'apigateway.amazonaws.com'
-            Action:
-              - 'sts:AssumeRole'
-      Path: '/'
-      Policies:
-        - PolicyName: LambdaAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: 'Allow'
-                Action: 'lambda:*'
-                Resource: !GetAtt getContactDetails.Arn
+#  ApiGatewayIamRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: '2012-10-17'
+#        Statement:
+#          - Sid: ''
+#            Effect: 'Allow'
+#            Principal:
+#              Service:
+#                - 'apigateway.amazonaws.com'
+#            Action:
+#              - 'sts:AssumeRole'
+#      Path: '/'
+#      Policies:
+#        - PolicyName: LambdaAccess
+#          PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#              - Effect: 'Allow'
+#                Action: 'lambda:*'
+#                Resource: !GetAtt getContactDetails.Arn
 
-  getContactDetails:
-    Type: "AWS::Lambda::Function"
-    Properties:
-      Description:  >
-        AWS Lambda Function that returns table results
-      Handler: "get_contacts.handler"
-      Role: !GetAtt DynamoDBRole.Arn
-      Runtime: "python3.8"
-      MemorySize: 256
-      Timeout: 120
-      Environment:
-        Variables:
-          CONTACT_TABLE_NAME: !Ref contactDetailsTable
-      Code:
-        S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'get_contacts.zip']]
+#  getContactDetails:
+#    Type: "AWS::Lambda::Function"
+#    Properties:
+#      Description:  >
+#        AWS Lambda Function that returns table results
+#      Handler: "get_contacts.handler"
+#      Role: !GetAtt DynamoDBRole.Arn
+#      Runtime: "python3.8"
+#      MemorySize: 256
+#      Timeout: 120
+#      Environment:
+#        Variables:
+#          CONTACT_TABLE_NAME: !Ref contactDetailsTable
+#      Code:
+#        S3Bucket: !Ref existingS3BucketName
+#        S3Key: !Join ["", [!Ref existingS3Path, 'get_contacts.zip']]

@@ -41,6 +41,7 @@ public class StreamTranscriptionBehaviorImpl implements StreamTranscriptionBehav
 
     @Override
     public void onComplete() {
+        segmentWriter.finalizeDynamoDBItem(tableName);
         logger.info("Transcribe stream completed");
     }
 }

@@ -8,7 +8,7 @@ Globals:
     Timeout: 180
     Environment:
       Variables:
-        DEBUG_MODE: false
+        DEBUG_MODE: True
         ES_INDEX: transcripts
 
 Parameters: 
@@ -117,6 +117,8 @@ Resources:
               - 'transcribe:DeleteVocabulary'
               - 'transcribe:ListVocabularies'
               - 'transcribe:GetVocabulary'
+              - 'comprehend:DetectSyntax'
+              - 'comprehend:BatchDetectSyntax'
               - 'comprehend:DetectEntities'
               - 'comprehend:DetectKeyPhrases'
               - 'comprehend:BatchDetectEntities'
@@ -178,7 +180,7 @@ Resources:
               "Type": "Task",
               "Resource": "${callTranscribe.Arn}",
               "InputPath": "$",
-              "ResultPath": "$.transcribe",
+              "ResultPath": "$.callTranscribeResult",
               "Next": "Check Transcribe Status",
               "Retry": [
                 {
@@ -198,8 +200,8 @@ Resources:
             "Check Transcribe Status": {
               "Type": "Task",
               "Resource": "${checkTranscribe.Arn}",
-              "InputPath": "$.transcribe",
-              "ResultPath": "$.transcribeStatus",
+              "InputPath": "$.",
+              "ResultPath": "$.checkTranscribeResult",
               "Next": "Is Transcribe Completed?"
             },
             "Wait for Transcribe Completion": {
@@ -211,7 +213,7 @@ Resources:
               "Type": "Choice",
               "Choices": [
                 {
-                  "Variable": "$.transcribeStatus.status",
+                  "Variable": "$.checkTranscribeResult.status",
                   "StringEquals": "COMPLETED",
                   "Next": "Process Transcription"
                 }
@@ -222,7 +224,7 @@ Resources:
               "Type": "Task",
               "Resource": "${processTranscriptionFullText.Arn}",
               "InputPath": "$",
-              "ResultPath": "$.processedTranscription",
+              "ResultPath": "$.processTranscriptionResult",
               "Next": "Upload To Elasticsearch"
             },
             "Upload To Elasticsearch": {

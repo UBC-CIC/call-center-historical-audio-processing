@@ -9,6 +9,7 @@ logger = logging.getLogger()
 Contains helper functions only, not a lambda function file
 """
 
+
 def find_duplicate_person(people):
     """
     Obtains duplicate list of people in the given Amazon Comprehend entities list

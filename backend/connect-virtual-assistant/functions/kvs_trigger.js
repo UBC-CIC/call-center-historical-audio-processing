@@ -6,6 +6,13 @@
 const AWS = require('aws-sdk');
 const lambda = new AWS.Lambda();
 
+/**
+ * Lambda function entry point, takes the audio data from the Kinesis Video stream resource
+ * and passes that as a parameter to invoke another Lambda function, the transcription Function
+ * @param event
+ * @param context
+ * @param callback
+ */
 exports.handler = (event, context, callback) => {
 
     console.log("Received event from Amazon Connect " + JSON.stringify(event));
@@ -58,6 +65,9 @@ exports.handler = (event, context, callback) => {
     callback(null, buildResponse());
 };
 
+/**
+ * Response function for the lambda handler that is passed as a callback
+ */
 function buildResponse() {
     return {
         // we always return "Success" for now

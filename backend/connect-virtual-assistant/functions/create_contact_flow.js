@@ -3,6 +3,10 @@
  **********************************************************************************************************************/
 'use strict';
 
+/**
+ * Helper function for the main lambda entry point
+ * Creates a Amazon Connect Contact Flow .json and uploads it to S3.
+ */
 function createContactFlow(properties, callback) {
     if (!properties.bucketName)
         callback("Bucket name not specified");
@@ -19,6 +23,9 @@ function createContactFlow(properties, callback) {
     uploadFlowToS3('kvsStreamingTranscribeFlow', mainFlow, bucketName, S3, callback);
 }
 
+/**
+ * Lambda entry-point, creates a Contact flow and uploads it to S3, returning the response of said operation
+ */
 createContactFlow.handler = function(event, context) {
     console.log(JSON.stringify(event, null, '  '));
 
@@ -32,6 +39,9 @@ createContactFlow.handler = function(event, context) {
     });
 };
 
+/**
+ * Gets the error message only if an error occurs and is passed in, returns empty string otherwise
+ */
 function getReason(err) {
     if (err)
         return err.message;
@@ -39,6 +49,15 @@ function getReason(err) {
         return '';
 }
 
+/**
+ * Helper function that uploads the specified object to the specified S3 bucket,
+ * and runs the callback upon completion
+ * @param name -       File name
+ * @param body -       Object to upload
+ * @param bucketName - Name of the bucket to upload to
+ * @param S3 -         S3 Client
+ * @param callback -   Post upload operation callback
+ */
 function uploadFlowToS3(name, body, bucketName, S3, callback) {
     S3.putObject({
         Bucket: bucketName,
@@ -54,6 +73,9 @@ function uploadFlowToS3(name, body, bucketName, S3, callback) {
 }
 
 
+/**
+ * Function to log the success or error response of the upload to S3 operation
+ */
 function sendResponse(event, context, status, data, err) {
     var responseBody = {
         StackId: event.StackId,

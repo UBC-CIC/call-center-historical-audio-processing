@@ -2,13 +2,7 @@ package com.amazonaws.kvstranscribestreaming;
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.UpdateItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
-import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
-import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +15,8 @@ import java.util.List;
 
 /**
  * TranscribedSegmentWriter writes the transcript segments to DynamoDB
- *
- * Code largely modified and based from https://github.com/amazon-connect/amazon-connect-realtime-transcription 
- *
+ * <p>
+ * Code largely modified and based from https://github.com/amazon-connect/amazon-connect-realtime-transcription
  */
 
 public class TranscribedSegmentWriter {
@@ -74,6 +67,40 @@ public class TranscribedSegmentWriter {
         }
     }
 
+    public void finalizeDynamoDBItem(String tableName) {
+        String contactId = this.getContactId();
+        Item ddbItem = null;
+
+
+        GetItemSpec getSpec = new GetItemSpec().withPrimaryKey("ContactId", contactId);
+        Item existingDdbItem = getDdbClient().getTable(tableName).getItem(getSpec);
+        logger.info("GetItem succeeded: " + existingDdbItem);
+
+
+        Double startTime = existingDdbItem.getDouble("StartTime");
+        Double endTime = existingDdbItem.getDouble("EndTime");
+        String segmentID = existingDdbItem.getString("SegmentId");
+        String transcript = existingDdbItem.getString("Transcript");
+        Boolean isPartial = existingDdbItem.getBoolean("IsPartial");
+
+        Instant now = Instant.now();
+
+        ddbItem = new Item()
+                .withKeyComponent("ContactId", contactId)
+                .withDouble("StartTime", startTime)
+                .withDouble("EndTime", endTime)
+                .withString("SegmentId", segmentID)
+                .withString("Transcript", transcript)
+                .withBoolean("IsPartial", isPartial)
+                // LoggedOn is an ISO-8601 string representation of when the entry was created
+                .withString("LoggedOn", now.toString())
+                // expire entries after 6 hours of creation/update
+                .withDouble("ExpiresOn", now.plusSeconds(6 * 3600).getEpochSecond())
+                .withBoolean("HasCompleted", true);
+
+        getDdbClient().getTable(tableName).putItem(ddbItem);
+    }
+
     private Item toDynamoDbItem(Result result, String tableName) {
 
         String contactId = this.getContactId();
@@ -87,7 +114,7 @@ public class TranscribedSegmentWriter {
 
         GetItemSpec getSpec = new GetItemSpec().withPrimaryKey("ContactId", contactId);
         Item existingDdbItem = getDdbClient().getTable(tableName).getItem(getSpec);
-        
+
         logger.info("GetItem succeeded: " + existingDdbItem);
 
         if (result.alternatives().size() > 0) {

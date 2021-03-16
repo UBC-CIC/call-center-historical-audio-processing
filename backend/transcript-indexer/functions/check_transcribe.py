@@ -1,19 +1,24 @@
-from __future__ import print_function
 import boto3
-from botocore.client import Config
-import datetime
+import logging
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+transcribe_client = boto3.client('transcribe')
 
 
-# The entry point for the lambda function
 def lambda_handler(event, context):
     """
-    Lambda function that takes the transcribe job event and checks it if has completed the transcription task
+    Lambda function that checks if the transcribe job started by call_transcribe has finished
+    Then it returns the transcription result obtained from Amazon Transcribe
+
+    :param event All the event variables inside a dictionary
+    :return: An transcription job results in event['transcribeStatus]
     """
-    transcribeJob = event['transcribeJob']
-    transcribe_client = boto3.client('transcribe')
+    transcribe_job = event['callTranscribeResult']['transcribeJob']
 
     # Call the AWS SDK to get the status of the transcription job
-    response = transcribe_client.get_transcription_job(TranscriptionJobName=transcribeJob)
+    response = transcribe_client.get_transcription_job(TranscriptionJobName=transcribe_job)
 
     # Pull the status
     status = response['TranscriptionJob']['TranscriptionJobStatus']
