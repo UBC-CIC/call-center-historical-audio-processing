@@ -11,42 +11,42 @@ import time
 
 # Log level
 logging.basicConfig()
-logger = logging.getLogger()
+LOGGER = logging.getLogger()
 if os.getenv('LOG_LEVEL') == 'DEBUG':
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+    LOGGER.setLevel(logging.INFO)
 
 # Parameters
 REGION = os.getenv('AWS_REGION', default='us-east-1')
 
 # Pull environment data for the ES domain
-esendpoint = os.environ['ES_DOMAIN']
+ES_ENDPOINT = os.environ['ES_DOMAIN']
 # If debug mode is TRUE, then S3 files are not deleted
-isDebugMode = os.environ['DEBUG_MODE']
+IS_DEBUG_MODE = os.environ['DEBUG_MODE']
 
 # get the Elasticsearch index name from the environment variables
 ES_INDEX = os.getenv('ES_INDEX', default='transcripts')
 # get the Elasticsearch index name from the environment variables
 
-s3_client = boto3.client('s3')
+S3_CLIENT = boto3.client('s3')
 # Create the auth token for the sigv4 signature
-session = boto3.session.Session()
-credentials = session.get_credentials().get_frozen_credentials()
-awsauth = AWSRequestsAuth(
-    aws_access_key=credentials.access_key,
-    aws_secret_access_key=credentials.secret_key,
-    aws_token=credentials.token,
-    aws_host=esendpoint,
+SESSION = boto3.session.Session()
+CREDENTIALS = SESSION.get_credentials().get_frozen_credentials()
+AWS_AUTH = AWSRequestsAuth(
+    aws_access_key=CREDENTIALS.access_key,
+    aws_secret_access_key=CREDENTIALS.secret_key,
+    aws_token=CREDENTIALS.token,
+    aws_host=ES_ENDPOINT,
     aws_region=REGION,
     aws_service='es'
 )
 
 # Connect to the elasticsearch cluster using aws authentication. The lambda function
 # must have access in an IAM policy to the ES cluster.
-es = Elasticsearch(
-    hosts=[{'host': esendpoint, 'port': 443}],
-    http_auth=awsauth,
+ES_CLIENT = Elasticsearch(
+    hosts=[{'host': ES_ENDPOINT, 'port': 443}],
+    http_auth=AWS_AUTH,
     use_ssl=True,
     verify_certs=True,
     ca_certs=certifi.where(),
@@ -60,22 +60,22 @@ def lambda_handler(event, context):
     """
     Lambda handler executed after transcription is processed. This function takes the the processed transcription
     and indexes it into the ElasticSearch.
-    The transcript is deleted afterwards
+    The transcript is deleted afterwards in non-debug mode (stored as a environment variable)
     """
-    full_call_transcript_s3_location = event["processTranscriptionResult"]
-    index_transcript(es, event, full_call_transcript_s3_location)
+    call_transcript_s3_location = event["processTranscriptionResult"]
+    index_transcript(event, call_transcript_s3_location)
 
-    if isDebugMode != 'TRUE':
+    if IS_DEBUG_MODE != 'TRUE':
         # Deletes the audio files in the amplify frontend storage bucket
-        response = s3_client.delete_object(Bucket=event['bucketName'], Key=event['bucketKey'])
+        response = S3_CLIENT.delete_object(Bucket=event['bucketName'], Key=event['bucketKey'])
 
     return
 
 
-def index_transcript(elasticsearch, event, full_call_transcript_s3_location):
+def index_transcript(event, call_transcript_s3_location):
     # Retrieves the transcribed text file stored in S3
-    response = s3_client.get_object(Bucket=full_call_transcript_s3_location['bucket'],
-                                    Key=full_call_transcript_s3_location['key'])
+    response = S3_CLIENT.get_object(Bucket=call_transcript_s3_location['bucket'],
+                                    Key=call_transcript_s3_location['key'])
     file_content = response['Body'].read().decode('utf-8')
     full_call_transcript = json.loads(file_content)
 
@@ -94,13 +94,12 @@ def index_transcript(elasticsearch, event, full_call_transcript_s3_location):
         'key_phrases': full_call_transcript['key_phrases']
     }
 
-    logger.info("request")
-    logger.debug(json.dumps(doc))
+    LOGGER.info("request")
+    LOGGER.debug(json.dumps(doc))
 
     # add the document to the index
     start = time.time()
-    res = elasticsearch.index(index=ES_INDEX,
-                              body=doc, id=event['dynamoId'])
-    logger.info("response")
-    logger.info(json.dumps(res, indent=4))
-    logger.info('REQUEST_TIME es_client.index {:10.4f}'.format(time.time() - start))
+    res = ES_CLIENT.index(index=ES_INDEX, body=doc, id=event['dynamoId'])
+    LOGGER.info("response")
+    LOGGER.info(json.dumps(res, indent=4))
+    LOGGER.info('REQUEST_TIME es_client.index {:10.4f}'.format(time.time() - start))

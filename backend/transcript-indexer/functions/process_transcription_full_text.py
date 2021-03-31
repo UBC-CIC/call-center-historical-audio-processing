@@ -8,28 +8,28 @@ from common_lib import id_generator
 
 # Logging configurations
 logging.basicConfig()
-logger = logging.getLogger()
+LOGGER = logging.getLogger()
 if os.getenv('LOG_LEVEL') == 'DEBUG':
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+    LOGGER.setLevel(logging.INFO)
 
 # Environment Parameters
 REGION = os.getenv('AWS_REGION', default='us-east-1')
 # Pull the bucket name from the environment variable set in the cloudformation stack
 # This bucket is used for storing text transcripts
 BUCKET = os.environ['BUCKET_NAME']
-logger.info(f"bucket: {BUCKET}")
+LOGGER.info(f"bucket: {BUCKET}")
 
 # Global Parameters
-commonDict = {'i': 'I'}
+COMMON_DICT = {'i': 'I'}
 # TODO: Investigate optimal values for these thresholds
 ENTITY_CONFIDENCE_THRESHOLD = 0.5
 KEY_PHRASES_CONFIDENCE_THRESHOLD = 0.5
 
 # Get the necessary AWS tools
-s3_client = boto3.client("s3")
-comprehend_client = boto3.client(service_name='comprehend', region_name=REGION)
+S3_CLIENT = boto3.client("s3")
+COMPREHEND_CLIENT = boto3.client(service_name='comprehend', region_name=REGION)
 
 
 class InvalidInputError(ValueError):
@@ -51,14 +51,14 @@ def process_transcript(transcription_url, vocabulary_info):
     output = response.read()
     json_data = json.loads(output)
 
-    logger.debug(json.dumps(json_data, indent=4))
+    LOGGER.debug(json.dumps(json_data, indent=4))
     results = json_data['results']
     # free up memory
     del json_data
 
     comprehend_text, speaker_labelled_paragraphs = chunk_up_transcript(custom_vocabs, results)
 
-    start = time.time()
+    # start = time.time()
     # If comprehend_chunks has > 25 chunks, batch_detect_entities errors may be thrown
     # Or if an individual document is > 5000 bytes
     # detected_entities_response = comprehend_client.batch_detect_entities(TextList=comprehend_text, LanguageCode='en')
@@ -69,34 +69,34 @@ def process_transcript(transcription_url, vocabulary_info):
     # logger.debug(json.dumps(entities, indent=4))
 
     start = time.time()
-    detected_phrase_response = comprehend_client.batch_detect_key_phrases(TextList=comprehend_text, LanguageCode='en')
+    detected_phrase_response = COMPREHEND_CLIENT.batch_detect_key_phrases(TextList=comprehend_text, LanguageCode='en')
     round_trip = time.time() - start
-    logger.info('End of batch_detect_key_phrases. Took time {:10.4f}\n'.format(round_trip))
+    LOGGER.info('End of batch_detect_key_phrases. Took time {:10.4f}\n'.format(round_trip))
 
     key_phrases = parse_detected_key_phrases_response(detected_phrase_response)
-    logger.debug(json.dumps(key_phrases, indent=4))
+    LOGGER.debug(json.dumps(key_phrases, indent=4))
 
     start = time.time()
-    syntax_results = comprehend_client.batch_detect_syntax(TextList=comprehend_text, LanguageCode='en')
+    syntax_results = COMPREHEND_CLIENT.batch_detect_syntax(TextList=comprehend_text, LanguageCode='en')
     round_trip = time.time() - start
-    logger.info('End of batch_detect_syntax. Took time {:10.4f}\n'.format(round_trip))
+    LOGGER.info('End of batch_detect_syntax. Took time {:10.4f}\n'.format(round_trip))
 
     extra_keywords = parse_verbs_from_syntaxes(syntax_results)
 
     key_phrases.extend(extra_keywords)
-    logger.info(f"Final keyphrases:{key_phrases}")
+    LOGGER.info(f"Final keyphrases:{key_phrases}")
 
     doc_to_update = {'transcript': speaker_labelled_paragraphs,
                      # 'transcript_entities': entities,
                      'key_phrases': key_phrases}
-    logger.debug(json.dumps(doc_to_update, indent=4))
+    LOGGER.debug(json.dumps(doc_to_update, indent=4))
 
     key = f'calls/transcript/{id_generator()}.json'
 
-    response = s3_client.put_object(Body=json.dumps(doc_to_update, indent=2), Bucket=BUCKET, Key=key)
-    logger.debug(json.dumps(response, indent=2))
+    response = S3_CLIENT.put_object(Body=json.dumps(doc_to_update, indent=2), Bucket=BUCKET, Key=key)
+    LOGGER.debug(json.dumps(response, indent=2))
 
-    logger.info(f"successfully written transcript to s3://{BUCKET}/{key}")
+    LOGGER.info(f"successfully written transcript to s3://{BUCKET}/{key}")
     # Return the bucket and key of the transcription / comprehend result.
     transcript_location = {"bucket": BUCKET, "key": key}
     return transcript_location
@@ -129,7 +129,7 @@ def chunk_up_transcript(custom_vocabs, results):
 
     transcribed_units = results['items']
     last_speaker = None
-    paragraphs = []
+    speaker_labelled_paragraphs = []
     current_paragraph = ""
     comprehend_chunks = []
     current_comprehend_chunk = ""
@@ -147,7 +147,7 @@ def chunk_up_transcript(custom_vocabs, results):
                 current_speaker = get_speaker_label(speaker_segments, float(item['start_time']))
                 if last_speaker is None or current_speaker != last_speaker:
                     if current_paragraph is not None:
-                        paragraphs.append(current_paragraph)
+                        speaker_labelled_paragraphs.append(current_paragraph)
                     current_paragraph = f"{current_speaker} :"
                     current_speaker_start_time = current_item_start_time
                 last_speaker = current_speaker
@@ -159,7 +159,7 @@ def chunk_up_transcript(custom_vocabs, results):
                     (current_item_start_time - current_speaker_start_time) > 15 and last_item_was_sentence_end):
                 current_speaker_start_time = current_item_start_time
                 if current_paragraph is not None or current_paragraph != "":
-                    paragraphs.append(current_paragraph)
+                    speaker_labelled_paragraphs.append(current_paragraph)
                 current_paragraph = ""
 
             # Get the transcribed item, replace content with custom and global vocabulary,
@@ -168,9 +168,9 @@ def chunk_up_transcript(custom_vocabs, results):
             if custom_vocabs is not None:
                 if phrase in custom_vocabs:
                     phrase = custom_vocabs[phrase]
-                    logger.info("replaced custom vocab: " + phrase)
-            if phrase in commonDict:
-                phrase = commonDict[phrase]
+                    LOGGER.info("replaced custom vocab: " + phrase)
+            if phrase in COMMON_DICT:
+                phrase = COMMON_DICT[phrase]
             current_paragraph = f"{current_paragraph} {phrase}"
 
             # Aggregate the transcribed items in chunks for Amazon Comprehend
@@ -203,12 +203,12 @@ def chunk_up_transcript(custom_vocabs, results):
     if not current_comprehend_chunk == "":
         comprehend_chunks.append(current_comprehend_chunk)
     if not current_paragraph == "":
-        paragraphs.append(current_paragraph)
+        speaker_labelled_paragraphs.append(current_paragraph)
 
-    logger.debug(json.dumps(paragraphs, indent=4))
-    logger.debug(json.dumps(comprehend_chunks, indent=4))
+    LOGGER.debug(json.dumps(speaker_labelled_paragraphs, indent=4))
+    LOGGER.debug(json.dumps(comprehend_chunks, indent=4))
 
-    return comprehend_chunks, "\n\n".join(paragraphs)
+    return comprehend_chunks, "\n\n".join(speaker_labelled_paragraphs)
 
 
 def parse_detected_entities_response(detected_entities_response, entities):
@@ -224,8 +224,8 @@ def parse_detected_entities_response(detected_entities_response, entities):
     :return: a dict containing list of entities for each type of entity kept (e.g LOCATION, PERSON etc)
     """
     if 'ErrorList' in detected_entities_response and len(detected_entities_response['ErrorList']) > 0:
-        logger.error("encountered error during batch_detect_entities")
-        logger.error("error:" + json.dumps(detected_entities_response['ErrorList'], indent=4))
+        LOGGER.error("encountered error during batch_detect_entities")
+        LOGGER.error("error:" + json.dumps(detected_entities_response['ErrorList'], indent=4))
 
     if 'ResultList' in detected_entities_response:
         result_list = detected_entities_response["ResultList"]
@@ -261,8 +261,8 @@ def parse_detected_key_phrases_response(detected_phrase_response):
     :return: a list of noun key_phrases with no duplicates
     """
     if 'ErrorList' in detected_phrase_response and len(detected_phrase_response['ErrorList']) > 0:
-        logger.error("encountered error during batch_detect_key_phrases")
-        logger.error(json.dumps(detected_phrase_response['ErrorList'], indent=4))
+        LOGGER.error("encountered error during batch_detect_key_phrases")
+        LOGGER.error(json.dumps(detected_phrase_response['ErrorList'], indent=4))
 
     if 'ResultList' in detected_phrase_response:
         result_list = detected_phrase_response["ResultList"]
@@ -289,8 +289,8 @@ def parse_verbs_from_syntaxes(syntax_results):
     :return: a list of noun key_phrases with no duplicates
     """
     if 'ErrorList' in syntax_results and len(syntax_results['ErrorList']) > 0:
-        logger.error("encountered error during batch_detect_syntax")
-        logger.error(json.dumps(syntax_results['ErrorList'], indent=4))
+        LOGGER.error("encountered error during batch_detect_syntax")
+        LOGGER.error(json.dumps(syntax_results['ErrorList'], indent=4))
     keywords = set()
     if 'ResultList' in syntax_results:
         result_list = syntax_results["ResultList"]
@@ -350,13 +350,14 @@ def lambda_handler(event, context):
         :return A dict containing the transcription bucket and key, returned in event['processedTranscription']
                 for `upload_to_elasticsearch.py` lambda handler
     """
-    logger.info('Received transcription url')
-    logger.info(json.dumps(event))
+    LOGGER.info('Received transcription url')
+    LOGGER.info(json.dumps(event))
 
     # Pull the signed URL for the payload of the transcription job
     transcription_url = event['checkTranscribeResult']['transcriptionUrl']
 
     vocab_info = None
+    # NOTE: Custom vocabulary may be inserted here
     if 'vocabularyInfo' in event:
         vocab_info = event['vocabularyInfo']
     return process_transcript(transcription_url, vocab_info)

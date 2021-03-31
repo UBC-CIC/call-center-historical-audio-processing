@@ -12,7 +12,7 @@ def lambda_handler(event, context):
     Does not return any value for another lambda function
     """
     stepfunctions_client = boto3.client('stepfunctions')
-    stepFunctionArn = os.environ['STEP_FUNCTION_ARN']
+    step_functions_arn = os.environ['STEP_FUNCTION_ARN']
 
     for record in event.get('Records'):
         if record.get('eventName') in ('INSERT', 'MODIFY'):
@@ -39,7 +39,7 @@ def lambda_handler(event, context):
             }
 
             response = stepfunctions_client.start_execution(
-                stateMachineArn=stepFunctionArn,
+                stateMachineArn=step_functions_arn,
                 name=id_generator(),
                 input=json.dumps(request_params, indent=4, sort_keys=True, default=str)
             )

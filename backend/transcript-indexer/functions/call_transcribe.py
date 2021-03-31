@@ -6,11 +6,11 @@ from botocore.config import Config
 
 # Log level
 logging.basicConfig()
-logger = logging.getLogger()
+LOGGER = logging.getLogger()
 if os.getenv('LOG_LEVEL') == 'DEBUG':
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.INFO)
+    LOGGER.setLevel(logging.INFO)
 
 # Get AWS region and necessary clients
 REGION = boto3.session.Session().region_name
@@ -22,7 +22,7 @@ CONFIG = Config(
         max_attempts=2
     )
 )
-transcribe_client = boto3.client('transcribe', config=CONFIG)
+TRANSCRIBE_CLIENT = boto3.client('transcribe', config=CONFIG)
 
 
 CONTENT_TYPE_TO_MEDIA_FORMAT = {
@@ -65,7 +65,7 @@ def lambda_handler(event, context):
     if content_type not in CONTENT_TYPE_TO_MEDIA_FORMAT:
         raise InvalidInputError(f"{content_type} is not supported audio type.")
     media_format = CONTENT_TYPE_TO_MEDIA_FORMAT[content_type]
-    logger.info(f"media type: {content_type}")
+    LOGGER.info(f"media type: {content_type}")
 
     # Assemble the url for the object for transcribe. It must be an s3 url in the region
     url = f"https://s3-{REGION}.amazonaws.com/{bucket}/{key}"
@@ -77,7 +77,7 @@ def lambda_handler(event, context):
         }
 
         # Call the AWS SDK to initiate the transcription job.
-        response = transcribe_client.start_transcription_job(
+        response = TRANSCRIBE_CLIENT.start_transcription_job(
             TranscriptionJobName=jobname,
             LanguageCode='en-US',
             Settings=settings,
@@ -92,17 +92,17 @@ def lambda_handler(event, context):
         )
         is_successful = "TRUE"
 
-    except transcribe_client.exceptions.BadRequestException as e:
+    except TRANSCRIBE_CLIENT.exceptions.BadRequestException as e:
         # Issues in the configuration of the transcribe request
-        logger.error(str(e))
+        LOGGER.error(str(e))
         raise TranscribeException(e)
-    except transcribe_client.exceptions.LimitExceededException as e:
+    except TRANSCRIBE_CLIENT.exceptions.LimitExceededException as e:
         # There is a limit to how many transcribe jobs can run concurrently. If you hit this limit,
         # return unsuccessful and the step function will retry.
-        logger.error(str(e))
+        LOGGER.error(str(e))
         raise TranscribeException(e)
-    except transcribe_client.exceptions.ClientError as e:
-        logger.error(str(e))
+    except TRANSCRIBE_CLIENT.exceptions.ClientError as e:
+        LOGGER.error(str(e))
         raise TranscribeException(e)
 
     # Return the transcription job and the success code only if there are no errors in the transcription request

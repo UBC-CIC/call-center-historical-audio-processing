@@ -5,10 +5,10 @@ import json
 import cfnresponse
 import logging
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
-cognito_idp_client = boto3.client('cognito-idp')
+COGNITO_IDP_CLIENT = boto3.client('cognito-idp')
 
 
 def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
@@ -36,7 +36,7 @@ def configure_cognito_lambda_handler(event, context):
     Lambda function to setup Cognito user pool, only creates users
     The responses for update and delete RequestType return a successful response by default
     """
-    logger.info("Received event: %s" % json.dumps(event))
+    LOGGER.info("Received event: %s" % json.dumps(event))
 
     try:
         if event['RequestType'] == 'Create':
@@ -49,7 +49,7 @@ def configure_cognito_lambda_handler(event, context):
             result_status = delete(event)
             cfnresponse.send(event, context, result_status, {})
     except:
-        logger.error("Error", exc_info=True)
+        LOGGER.error("Error", exc_info=True)
         cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
 
@@ -99,7 +99,7 @@ def add_user(userPoolId, kibanaUser, kibanaEmail, kibanaPassword):
     Adds the input kibana user with their given credentials to the given Cognito user pool
     and returns the cognito response
     """
-    cognito_response = cognito_idp_client.admin_create_user(
+    cognito_response = COGNITO_IDP_CLIENT.admin_create_user(
         UserPoolId=userPoolId,
         Username=kibanaUser,
         UserAttributes=[
@@ -118,5 +118,5 @@ def add_user(userPoolId, kibanaUser, kibanaEmail, kibanaPassword):
             'EMAIL'
         ]
     )
-    logger.info("create Cognito user {} for user pool {} successful.".format(kibanaUser, userPoolId))
+    LOGGER.info("create Cognito user {} for user pool {} successful.".format(kibanaUser, userPoolId))
     return cognito_response

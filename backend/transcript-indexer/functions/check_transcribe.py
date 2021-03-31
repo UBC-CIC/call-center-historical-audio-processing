@@ -1,10 +1,10 @@
 import boto3
 import logging
 logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
-transcribe_client = boto3.client('transcribe')
+TRANSCRIBE_CLIENT = boto3.client('transcribe')
 
 
 def lambda_handler(event, context):
@@ -18,7 +18,7 @@ def lambda_handler(event, context):
     transcribe_job = event['callTranscribeResult']['transcribeJob']
 
     # Call the AWS SDK to get the status of the transcription job
-    response = transcribe_client.get_transcription_job(TranscriptionJobName=transcribe_job)
+    response = TRANSCRIBE_CLIENT.get_transcription_job(TranscriptionJobName=transcribe_job)
 
     # Pull the status
     status = response['TranscriptionJob']['TranscriptionJobStatus']
