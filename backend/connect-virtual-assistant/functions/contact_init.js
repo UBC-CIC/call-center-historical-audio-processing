@@ -19,7 +19,7 @@ exports.handler = (event, context, callback) => {
     let tableName = process.env.table_name;
     let currentTimeStamp = new Date().toString();
     let currentDate = new Date().toLocaleDateString();
-    let TTL = Math.round(Date.now() / 1000) + 3 * 24 * 3600;
+    let TTL = Math.round(Date.now() / 1000) + 6 * 3600;
 
     //set up the database query to be used to update the customer information record in DynamoDB
     var paramsUpdate = {

@@ -44,7 +44,6 @@ def process_transcript(transcription_url, vocabulary_info):
     :param vocabulary_info: Custom vocabulary for transcription if implemented
     :return: A dict containing the bucket location for the transcribed text
     """
-    # TODO check how to add custom vocabulary here
     custom_vocabs = None
 
     # Read Transcribe result url
@@ -62,12 +61,12 @@ def process_transcript(transcription_url, vocabulary_info):
     start = time.time()
     # If comprehend_chunks has > 25 chunks, batch_detect_entities errors may be thrown
     # Or if an individual document is > 5000 bytes
-    detected_entities_response = comprehend_client.batch_detect_entities(TextList=comprehend_text, LanguageCode='en')
-    round_trip = time.time() - start
-    logger.info('End of batch_detect_entities. Took time {:10.4f}\n'.format(round_trip))
+    # detected_entities_response = comprehend_client.batch_detect_entities(TextList=comprehend_text, LanguageCode='en')
+    # round_trip = time.time() - start
+    # logger.info('End of batch_detect_entities. Took time {:10.4f}\n'.format(round_trip))
 
-    entities = parse_detected_entities_response(detected_entities_response, {})
-    logger.debug(json.dumps(entities, indent=4))
+    # entities = parse_detected_entities_response(detected_entities_response, {})
+    # logger.debug(json.dumps(entities, indent=4))
 
     start = time.time()
     detected_phrase_response = comprehend_client.batch_detect_key_phrases(TextList=comprehend_text, LanguageCode='en')
@@ -88,7 +87,7 @@ def process_transcript(transcription_url, vocabulary_info):
     logger.info(f"Final keyphrases:{key_phrases}")
 
     doc_to_update = {'transcript': speaker_labelled_paragraphs,
-                     'transcript_entities': entities,
+                     # 'transcript_entities': entities,
                      'key_phrases': key_phrases}
     logger.debug(json.dumps(doc_to_update, indent=4))
 
@@ -254,7 +253,7 @@ def parse_detected_entities_response(detected_entities_response, entities):
 
 def parse_detected_key_phrases_response(detected_phrase_response):
     """
-    Given the result of batch_detect_phrases from Amazon Comprehend
+    Given the result of batch_detect_key_phrases from Amazon Comprehend
     It logs the ErrorList,
     returns a list of key_phrases that are above KEY_PHRASES_CONFIDENCE_THRESHOLD with no duplicate entries
 
@@ -281,6 +280,14 @@ def parse_detected_key_phrases_response(detected_phrase_response):
 
 
 def parse_verbs_from_syntaxes(syntax_results):
+    """
+    Given the result of batch_detect_key_phrases from Amazon Comprehend
+    It logs the ErrorList,
+    returns a list of key_phrases that are above KEY_PHRASES_CONFIDENCE_THRESHOLD with no duplicate entries
+
+    :param syntax_results: Response from Amazon Comprehend for batch_detect_key_phrases
+    :return: a list of noun key_phrases with no duplicates
+    """
     if 'ErrorList' in syntax_results and len(syntax_results['ErrorList']) > 0:
         logger.error("encountered error during batch_detect_syntax")
         logger.error(json.dumps(syntax_results['ErrorList'], indent=4))
@@ -298,7 +305,7 @@ def parse_verbs_from_syntaxes(syntax_results):
 
 
 def token_is_adjective_or_adverb(tag):
-    return (tag == 'ADJ' or tag == 'VERB')
+    return tag == 'ADJ' or tag == 'VERB'
 
 
 def parse_speaker_segments(results):
@@ -323,7 +330,6 @@ def parse_speaker_segments(results):
 def get_speaker_label(speaker_segments, time_stamp):
     """
     Performs a linear search for the associated speaker for a given time_stamp
-    TODO: Replace with binary search and check if speaker segments if sorted by time
 
     :param speaker_segments: List of speaker segments
     :param time_stamp: The time to search for in the list of speaker segments

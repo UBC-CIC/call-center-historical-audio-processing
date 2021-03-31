@@ -10,9 +10,10 @@ The E-Comm 911 Connect Virtual Assistant tool serves to assist non-emergency cal
 
 ## Stack Documentation and Deployment Guides
 
-[Frontend Deployment](./frontend-doc.md)\
-[Audio Transcription Stack Deployment](./backend/transcript-indexer/README.md)\
-[AWS Connect Call Transcription Stack Deployment](./backend/connect-virtual-assistant/README.md)
+[Call Transcriber Backend Stack Deployment](./backend/transcript-indexer/README.md)\
+[Call Transcriber Frontend Stack Deployment](./frontend-doc.md)\
+[Virtual Assistant Backend Stack Deployment](./backend/connect-virtual-assistant/README.md)
+[Virtual Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-virtual-assistant-frontend/README.md)
 
 ## Credits
 This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams and with quoted usage and reference to some AWS sample template projects.

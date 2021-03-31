@@ -1,8 +1,9 @@
-# E-Comm 911 Virtual Assistant - Frontend
+# E-Comm 911 Call Transcriber - Frontend
 
 ## Project Overview
 
-A basic frontend that interacts with the backend stacks. This project was bootstrapped using [Create React App](https://github.com/facebook/create-react-app).
+A basic frontend that allow uploading audio files with mapped properties and connects to the
+call transcriber backend. This project was bootstrapped using [Create React App](https://github.com/facebook/create-react-app).
 
 ![alt text](images/frontend-upload.png)
 
@@ -34,7 +35,7 @@ Metadata can also stored with the S3 object using the Metadata config field in t
 
 ## Logging in
 
-Cognito is used for authenticate users into the frontend and integrates with . Users will need to input their email address, name and a strong password to create an account.
+Cognito is used to authenticate users into the frontend and integrates with Amplify Storage and API. Users will need to input their email address, name, and a strong password to create an account.
 After account creation, users will need to verify their account by inputting the 6-digit verification code that was sent to their provided email address before being able to log in to the system.
 
 ## Next Steps

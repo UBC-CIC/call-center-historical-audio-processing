@@ -16,16 +16,16 @@ Parameters:
     Description: Name given to the previously deployed audio file transcription stack.
   transcriptSegmentsTable:
     Type: String
-    Default:  contactTranscriptSegments
-    Description:  The name of the DynamoDB Table where segments (utterances) from the customer for the caller transcript will be saved (Ensure you do not have a table with this name already).
+    Default: contactTranscriptSegments
+    Description: The name of the DynamoDB Table where segments (utterances) from the customer for the caller transcript will be saved (Ensure you do not have a table with this name already).
   transcriptSegmentsToCustomerTable:
     Type: String
-    Default:  contactTranscriptSegmentsToCustomer
-    Description:  The name of the DynamoDB Table where segments (utterances) to the customer for the caller transcript will be saved (Ensure you do not have a table with this name already).
+    Default: contactTranscriptSegmentsToCustomer
+    Description: The name of the DynamoDB Table where segments (utterances) to the customer for the caller transcript will be saved (Ensure you do not have a table with this name already).
   contactDetailsTable:
     Type: String
-    Default:  contactDetails
-    Description:  The name of the DynamoDB Table where contact details will be written (Ensure you do not have a table with this name already).
+    Default: contactDetails
+    Description: The name of the DynamoDB Table where contact details will be written (Ensure you do not have a table with this name already).
   jurisdictionsTable:
     Type: String
     Default: Jurisdictions
@@ -37,38 +37,38 @@ Parameters:
     Type: String
     Default: deployment/
     Description: The path to the zipped lambda files in the bucket provided in existingS3BucketName
-    
+
 Outputs:
   S3Bucket:
     Value: !Ref createS3Bucket
     Description: S3 Bucket that stores the sample Connect contact flow
   transcriptSegmentsDDBTable:
-    Description:  The ARN of the DynamoDB table created to store segments of call transcripts (customer audio)
+    Description: The ARN of the DynamoDB table created to store segments of call transcripts (customer audio)
     Value: !GetAtt transcriptSegmentsDDBTable.Arn
   contactsDDBTable:
-    Description:  The ARN of the DynamoDB table created to store contact details used in this solution
+    Description: The ARN of the DynamoDB table created to store contact details used in this solution
     Value: !GetAtt contactDetailsDDBTable.Arn
   initContactDetails:
-    Description:  >
+    Description: >
       AWS Lambda Function that will be triggered when the call starts so that we have the initial contact details which can later add to when we have the transcript.
     Value: !Ref initContactDetails
   transcriptionTrigger:
-    Description:  >
+    Description: >
       AWS Lambda Function to start (asynchronous) streaming transcription; it is expected to be called by the
       Amazon Connect Contact Flow.
     Value: !Ref kvsConsumerTrigger
   transcriptionTriggerARN:
-    Description:  ARN for the TranscriptionTriggerFunction
+    Description: ARN for the TranscriptionTriggerFunction
     Value: !GetAtt kvsConsumerTrigger.Arn
   CallTranscription:
-    Description:  AWS Lambda Function to get audio from Kinesis Video Streams and use Amazon Transcribe to get text for the caller audio.  Should be invoked by TranscriptionTrigger and write results to the transcriptSegments table.
+    Description: AWS Lambda Function to get audio from Kinesis Video Streams and use Amazon Transcribe to get text for the caller audio.  Should be invoked by TranscriptionTrigger and write results to the transcriptSegments table.
     Value: !Ref kvsTranscriber
   createS3BucketOP:
     Description: Bucket contains all the call recordings and sample contactflow
-    Value: !GetAtt [createS3Bucket, WebsiteURL]
+    Value: !GetAtt [ createS3Bucket, WebsiteURL ]
   createS3BucketSSLOP:
-    Description:  Bucket contains all the call recordings and sample contactflow
-    Value: !Join ['', ['https://', !GetAtt [createS3Bucket, DomainName]]]
+    Description: Bucket contains all the call recordings and sample contactflow
+    Value: !Join [ '', [ 'https://', !GetAtt [ createS3Bucket, DomainName ] ] ]
 #  apiGatewayInvokeURL:
 #    Value: !Sub https://${apiGateway}.execute-api.${AWS::Region}.amazonaws.com/call
 
@@ -105,26 +105,24 @@ Resources:
               SSEAlgorithm: AES256
       CorsConfiguration:
         CorsRules:
-          -   AllowedOrigins:
-                - '*'
-              AllowedHeaders:
-                - '*'
-              AllowedMethods:
-                - PUT
-                - HEAD
-              MaxAge: '3000'
+          - AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - PUT
+              - HEAD
+            MaxAge: '3000'
 
   transcriptSegmentsDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName:  !Ref transcriptSegmentsTable
+      TableName: !Ref transcriptSegmentsTable
       AttributeDefinitions:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           AttributeType: "S"
       KeySchema:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           KeyType: "HASH"
       # assuming 5 concurrent calls
       ProvisionedThroughput:
@@ -137,22 +135,20 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TimeToLiveSpecification:
-        AttributeName:  "ExpiresOn"
-        Enabled:  True
+        AttributeName: "ExpiresOn"
+        Enabled: True
       StreamSpecification:
         StreamViewType: NEW_IMAGE
 
   transcriptSegmentsToCustomerDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName:  !Ref transcriptSegmentsToCustomerTable
+      TableName: !Ref transcriptSegmentsToCustomerTable
       AttributeDefinitions:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           AttributeType: "S"
       KeySchema:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           KeyType: "HASH"
       # assuming 5 concurrent calls
       ProvisionedThroughput:
@@ -165,22 +161,20 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TimeToLiveSpecification:
-        AttributeName:  "ExpiresOn"
-        Enabled:  True
+        AttributeName: "ExpiresOn"
+        Enabled: True
       StreamSpecification:
         StreamViewType: "NEW_IMAGE"
 
   contactDetailsDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName:  !Ref contactDetailsTable
+      TableName: !Ref contactDetailsTable
       AttributeDefinitions:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           AttributeType: "S"
       KeySchema:
-        -
-          AttributeName: "ContactId"
+        - AttributeName: "ContactId"
           KeyType: "HASH"
       # assuming 5 concurrent calls
       ProvisionedThroughput:
@@ -193,45 +187,28 @@ Resources:
       SSESpecification:
         SSEEnabled: True
       TimeToLiveSpecification:
-        AttributeName:  "ExpiresOn"
-        Enabled:  True
+        AttributeName: "ExpiresOn"
+        Enabled: True
 
-  jurisdictionsDDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName:  !Ref jurisdictionsTable
-      AttributeDefinitions:
-        -
-          AttributeName: "JurisdictionId"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "JurisdictionId"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits:
-          5
-        WriteCapacityUnits:
-          5
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: True
-      SSESpecification:
-        SSEEnabled: True
-
-  transcriptSegmentsTableParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Value: !GetAtt transcriptSegmentsDDBTable.Arn
-
-  transcriptSegmentsToCustomerTableParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Value: !GetAtt transcriptSegmentsToCustomerDDBTable.Arn
-
-  contactDetailsTableParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Value: !GetAtt contactDetailsDDBTable.Arn
+#  jurisdictionsDDBTable:
+#    Type: AWS::DynamoDB::Table
+#    Properties:
+#      TableName: !Ref jurisdictionsTable
+#      AttributeDefinitions:
+#        - AttributeName: "JurisdictionId"
+#          AttributeType: "S"
+#      KeySchema:
+#        - AttributeName: "JurisdictionId"
+#          KeyType: "HASH"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits:
+#          5
+#        WriteCapacityUnits:
+#          5
+#      PointInTimeRecoverySpecification:
+#        PointInTimeRecoveryEnabled: True
+#      SSESpecification:
+#        SSEEnabled: True
 
   KvsTranscribeRole:
     Type: "AWS::IAM::Role"
@@ -246,8 +223,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -255,21 +231,18 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: kvs-streaming-transcribe-policy
+        - PolicyName: kvs-streaming-transcribe-policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
@@ -283,16 +256,14 @@ Resources:
                 Resource:
                   - !Sub ${transcriptSegmentsDDBTable.Arn}
                   - !Sub ${transcriptSegmentsToCustomerDDBTable.Arn}
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "s3:PutObject"
                   - "s3:GetObject"
                   - "s3:PutObjectAcl"
                 Resource:
                   - !Sub ${createS3Bucket.Arn}/*
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "transcribe:DeleteTranscriptionJob"
                   - "transcribe:GetTranscriptionJob"
@@ -302,8 +273,7 @@ Resources:
                   - "transcribe:StartStreamTranscription"
                   - "transcribe:StartTranscriptionJob"
                 Resource: "*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "kinesisvideo:Describe*"
                   - "kinesisvideo:Get*"
@@ -316,8 +286,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -325,21 +294,18 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: kvs-streaming-trigger-policy
+        - PolicyName: kvs-streaming-trigger-policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "lambda:InvokeFunction"
                   - "lambda:InvokeAsync"
@@ -352,8 +318,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -361,21 +326,18 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: contact-flow-creator-policy
+        - PolicyName: contact-flow-creator-policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "s3:PutObject"
                 Resource:
@@ -387,8 +349,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               AWS:
                 !Join
@@ -417,8 +378,7 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Action:
               - "comprehend:ListEntityRecognizers"
               - "comprehend:DetectSentiment"
@@ -427,19 +387,16 @@ Resources:
               - "comprehend:DetectSyntax"
               - "comprehend:DetectKeyPhrases"
             Resource: "*"
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Action:
               - "translate:TranslateText"
             Resource: "*"
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Action:
               - "s3:PutObject"
             Resource:
               - !Sub ${createS3Bucket.Arn}/*
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Action:
               - "connect:UpdateContactAttributes"
             Resource: "*"
@@ -450,8 +407,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -459,21 +415,18 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: connect-aipsas-ststoken
+        - PolicyName: connect-aipsas-ststoken
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "dynamodb:UpdateItem"
                 Resource:
@@ -483,15 +436,14 @@ Resources:
                   - 'sts:AssumeRole'
                 Resource:
                   - !GetAtt ConnectUserStsRole.Arn
-                  
+
   TranscribeRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -499,26 +451,22 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: dynamodb-stream-transcribe-policy
+        - PolicyName: dynamodb-stream-transcribe-policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: "*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
@@ -528,8 +476,7 @@ Resources:
                   - !Sub ${transcriptSegmentsDDBTable.StreamArn}
                   - !Sub ${transcriptSegmentsToCustomerDDBTable.StreamArn}
                   - !Sub ${contactDetailsDDBTable.Arn}
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
@@ -540,8 +487,7 @@ Resources:
                   - !Sub ${contactDetailsDDBTable.Arn}
                   - !Sub ${transcriptSegmentsToCustomerDDBTable.Arn}
                   - !Sub ${transcriptSegmentsDDBTable.Arn}
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "comprehend:DetectEntities"
                   - "comprehend:DetectKeyPhrases"
@@ -549,8 +495,7 @@ Resources:
                   - "comprehend:BatchDetectKeyPhrases"
                   - "comprehend:BatchDetectSyntax"
                 Resource: "*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - es:*
                 Resource: "*"
@@ -558,7 +503,7 @@ Resources:
   kvsTranscriber:
     Type: "AWS::Lambda::Function"
     Properties:
-      Description:  >
+      Description: >
         Process audio from Kinesis Video Stream and use Amazon Transcribe to get text
         for the caller audio. Will be invoked by the kvsConsumerTrigger Lambda, and writes results to the
         transcript DynamoDB tables.
@@ -582,12 +527,12 @@ Resources:
 
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'connect-virtual-assistant.zip']]
+        S3Key: !Join [ "", [ !Ref existingS3Path, 'connect-virtual-assistant.zip' ] ]
 
   kvsConsumerTrigger:
     Type: "AWS::Lambda::Function"
     Properties:
-      Description:  >
+      Description: >
         AWS Lambda Function to start (asynchronous) streaming transcription; it is expected to be called by the
         Amazon Connect Contact Flow.
       Handler: "kvs_trigger.handler"
@@ -600,12 +545,12 @@ Resources:
           transcriptionFunction: !Ref kvsTranscriber
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'kvs_trigger.zip']]
+        S3Key: !Join [ "", [ !Ref existingS3Path, 'kvs_trigger.zip' ] ]
 
   initContactDetails:
     Type: "AWS::Lambda::Function"
     Properties:
-      Description:  >
+      Description: >
         AWS Lambda Function that will be triggered when the call starts so that we have the initial contact details which can later add to when we have the transcript.
       Handler: "contact_init.handler"
       Role: !GetAtt STSTokenLambdaIAMRole.Arn
@@ -618,12 +563,12 @@ Resources:
           assume_role: !GetAtt ConnectUserStsRole.Arn
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'contact_init.zip']]
+        S3Key: !Join [ "", [ !Ref existingS3Path, 'contact_init.zip' ] ]
 
   contactFlowCreator:
     Type: "AWS::Lambda::Function"
     Properties:
-      Description:  >
+      Description: >
         AWS Lambda Function that will create the initial sample contact flow and upload it to the S3 bucket
       Handler: "create_contact_flow.handler"
       Role: !GetAtt ContactFlowCreatorRole.Arn
@@ -632,12 +577,12 @@ Resources:
       Timeout: 120
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'create_contact_flow.zip']]
+        S3Key: !Join [ "", [ !Ref existingS3Path, 'create_contact_flow.zip' ] ]
 
   comprehendTranscribedAudioText:
     Type: "AWS::Lambda::Function"
     Properties:
-      Description:  >
+      Description: >
         AWS Lambda Function that runs the transcribed text through AWS Comprehend
       Handler: "process_transcript.handler"
       Role: !GetAtt TranscribeRole.Arn
@@ -653,7 +598,7 @@ Resources:
             Fn::ImportValue: !Sub "${audioFileTranscribeStack}-ESDomainName"
       Code:
         S3Bucket: !Ref existingS3BucketName
-        S3Key: !Join ["", [!Ref existingS3Path, 'process_transcript.zip']]
+        S3Key: !Join [ "", [ !Ref existingS3Path, 'process_transcript.zip' ] ]
 
   # Will create a DynamoDB trigger from the call taker transcription table
   comprehendTranscribedAudioTextEventMapping:
@@ -685,36 +630,36 @@ Resources:
       kvsTriggerFunction:
         !GetAtt kvsConsumerTrigger.Arn
 
-#  apiGateway:
-#    Type: AWS::ApiGateway::RestApi
-#    Properties:
-#      ApiKeySourceType: HEADER
-#      Description: An API Gateway with Lambda Integration to return result values
-#      EndpointConfiguration:
-#        Types:
-#          - EDGE
-#      Name: lambda-api
+  #  apiGateway:
+  #    Type: AWS::ApiGateway::RestApi
+  #    Properties:
+  #      ApiKeySourceType: HEADER
+  #      Description: An API Gateway with Lambda Integration to return result values
+  #      EndpointConfiguration:
+  #        Types:
+  #          - EDGE
+  #      Name: lambda-api
 
-#  apiGatewayRootMethod:
-#    Type: AWS::ApiGateway::Method
-#    Properties:
-#      AuthorizationType: NONE
-#      HttpMethod: GET
-#      Integration:
-#        Credentials: !GetAtt ApiGatewayIamRole.Arn
-#        IntegrationHttpMethod: POST
-#        Type: AWS_PROXY
-#        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getContactDetails.Arn}/invocations
-#      ResourceId: !GetAtt apiGateway.RootResourceId
-#      RestApiId: !Ref apiGateway
-#
-#  apiGatewayDeployment:
-#    Type: AWS::ApiGateway::Deployment
-#    DependsOn:
-#      - apiGatewayRootMethod
-#    Properties:
-#      RestApiId: !Ref apiGateway
-#      StageName: call
+  #  apiGatewayRootMethod:
+  #    Type: AWS::ApiGateway::Method
+  #    Properties:
+  #      AuthorizationType: NONE
+  #      HttpMethod: GET
+  #      Integration:
+  #        Credentials: !GetAtt ApiGatewayIamRole.Arn
+  #        IntegrationHttpMethod: POST
+  #        Type: AWS_PROXY
+  #        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getContactDetails.Arn}/invocations
+  #      ResourceId: !GetAtt apiGateway.RootResourceId
+  #      RestApiId: !Ref apiGateway
+  #
+  #  apiGatewayDeployment:
+  #    Type: AWS::ApiGateway::Deployment
+  #    DependsOn:
+  #      - apiGatewayRootMethod
+  #    Properties:
+  #      RestApiId: !Ref apiGateway
+  #      StageName: call
 
   DynamoDBRole:
     Type: "AWS::IAM::Role"
@@ -722,8 +667,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -731,21 +675,18 @@ Resources:
               - "sts:AssumeRole"
       Path: "/"
       Policies:
-        -
-          PolicyName: dynamodb-read-policy
+        - PolicyName: dynamodb-read-policy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource:
                   - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action:
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
@@ -754,6 +695,33 @@ Resources:
                   - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub ${contactDetailsDDBTable.Arn}
+
+#  DynamoDBAccessPolicy:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      - PolicyName: DynamoDBAccessPolicyForAmplify
+#        PolicyDocument:
+#          Version: '2012-10-17'
+#          Statement:
+#            - Effect: 'Allow'
+#              Action:
+#                - "dynamodb:BatchGet*"
+#                - "dynamodb:PutItem"
+#                - "dynamodb:DescribeTable"
+#                - "dynamodb:Get*"
+#                - "dynamodb:BatchWrite*"
+#                - "dynamodb:Scan"
+#                - "dynamodb:Query"
+#                - "dynamodb:DescribeStream"
+#              Resource:
+#                - !GetAtt getContactDetails.Arn
+#                - !GetAtt transcriptSegments.Arn
+#                - !GetAtt transcriptSegmentsToCustomerDDBTable.Arn
+#
+#  DynamoDBAccessPolicyParam:
+#    Type: AWS::SSM::Parameter
+#    Properties:
+#      Value: !GetAtt DynamoDBAccessPolicy.Arn
 
 #  ApiGatewayIamRole:
 #    Type: AWS::IAM::Role

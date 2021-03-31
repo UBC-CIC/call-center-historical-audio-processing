@@ -14,21 +14,22 @@ Some system requirements before starting deployment:
 ```
 aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION> --profile <YOUR-PROFILE>
 ```
-3) Run the following SAM commands in this subdirectory to build and package the application onto the created S3 bucket in the first step:
+NOTE: If using region us-east-1, remove the entire `--create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION>` section
+2) Run the following SAM commands in this subdirectory to build and package the application onto the created S3 bucket in the first step:
 ```
 sam build
 ```
 ```
 sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --profile <YOUR-PROFILE>
 ```
-4) Run the following SAM command to deploy the application. You can add the optional ```--guided``` flag for AWS SAM to provide step-by-step prompts for the deployment process:
+3) Run the following SAM command to deploy the application. You can add the optional ```--guided``` flag for AWS SAM to provide step-by-step prompts for the deployment process:
 ```
 sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
 ```
-5) If ```--guided``` flag is used, modify the default parameters when prompted if you want (otherwise press Enter to skip), and confirm the settings from the change set to start stack creation. The stack will take some time to finish deployment, due to creating the Elasticsearch cluster.
-6) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
+4) If ```--guided``` flag is used, modify the default parameters when prompted if you want (otherwise press Enter to skip), and confirm the settings from the change set to start stack creation. The stack will take some time to finish deployment, due to creating the Elasticsearch cluster.
+5) Follow the next steps after deploying the frontend. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](../../images/enable-dynamodb-trigger.png)
-7) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
+6) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the dropdown. Check off the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](../../images/add-trigger.png)
 
 Now, refer to the [Connect stack deployment guide](../connect-virtual-assistant/README.md).
