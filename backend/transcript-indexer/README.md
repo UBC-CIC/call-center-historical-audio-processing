@@ -88,6 +88,7 @@ This is a proof of concept for E-Comm 911 done by the UBC CIC. The project may b
   implemented.
 * The transcription accuracy can further be improved by using a custom-language model for Amazon Transcribe that 
   has to be built using domain-specific text or audio files with their respective highly-accurate transcripts.
+* The configured concurrency 
 
 ## Credits
 

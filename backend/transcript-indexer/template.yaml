@@ -200,7 +200,7 @@ Resources:
             "Check Transcribe Status": {
               "Type": "Task",
               "Resource": "${checkTranscribe.Arn}",
-              "InputPath": "$.",
+              "InputPath": "$",
               "ResultPath": "$.checkTranscribeResult",
               "Next": "Is Transcribe Completed?"
             },
