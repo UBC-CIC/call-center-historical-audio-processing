@@ -33,8 +33,8 @@ def pwd_generator(size=8):
 
 def configure_cognito_lambda_handler(event, context):
     """
-    Lambda function to setup Cognito user pool, only creates users
-    The responses for update and delete RequestType return a successful response by default
+    Lambda function that creates a cognito identity pool user that is authorized to access the elasticsearch
+    cluster via Kibana
     """
     LOGGER.info("Received event: %s" % json.dumps(event))
 
@@ -43,7 +43,6 @@ def configure_cognito_lambda_handler(event, context):
             create_response = create(event)
             cfnresponse.send(event, context, cfnresponse.SUCCESS, create_response)
         if event['RequestType'] == 'Update':
-            # TODO Check if update request needs to be implemented
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
         elif event['RequestType'] == 'Delete':
             result_status = delete(event)
@@ -68,9 +67,6 @@ def create(event):
 
 
 def delete(event):
-    """
-    TODO: Delete not implemented, delete action always succeeds, check if needs to be implemented
-    """
     return cfnresponse.SUCCESS
 
 

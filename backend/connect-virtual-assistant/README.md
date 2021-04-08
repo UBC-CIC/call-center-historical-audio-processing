@@ -15,7 +15,7 @@ aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuratio
 ```
 2) Set up an instance of Amazon Connect from the AWS console. Details on instance creation can be 
    found [here](https://docs.aws.amazon.com/connect/latest/adminguide/tutorial1-create-instance.html).
-3) In that same created instance, enable live media streaming so that it supports the start/stop media streaming 
+3) In that same created instance, **enable live media streaming** so that it supports the start/stop media streaming 
    contact flow blocks that are required in the contact flows (workflow once an Amazon Connect number is called). 
    Instructions for enabling this can be 
    found [here](https://docs.aws.amazon.com/connect/latest/adminguide/enable-live-media-streams.html).

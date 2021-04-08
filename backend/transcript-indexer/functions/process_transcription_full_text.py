@@ -23,8 +23,6 @@ LOGGER.info(f"bucket: {BUCKET}")
 
 # Global Parameters
 COMMON_DICT = {'i': 'I'}
-# TODO: Investigate optimal values for these thresholds
-ENTITY_CONFIDENCE_THRESHOLD = 0.5
 KEY_PHRASES_CONFIDENCE_THRESHOLD = 0.5
 
 # Get the necessary AWS tools
@@ -57,16 +55,6 @@ def process_transcript(transcription_url, vocabulary_info):
     del json_data
 
     comprehend_text, speaker_labelled_paragraphs = chunk_up_transcript(custom_vocabs, results)
-
-    # start = time.time()
-    # If comprehend_chunks has > 25 chunks, batch_detect_entities errors may be thrown
-    # Or if an individual document is > 5000 bytes
-    # detected_entities_response = comprehend_client.batch_detect_entities(TextList=comprehend_text, LanguageCode='en')
-    # round_trip = time.time() - start
-    # logger.info('End of batch_detect_entities. Took time {:10.4f}\n'.format(round_trip))
-
-    # entities = parse_detected_entities_response(detected_entities_response, {})
-    # logger.debug(json.dumps(entities, indent=4))
 
     start = time.time()
     detected_phrase_response = COMPREHEND_CLIENT.batch_detect_key_phrases(TextList=comprehend_text, LanguageCode='en')
@@ -211,44 +199,44 @@ def chunk_up_transcript(custom_vocabs, results):
     return comprehend_chunks, "\n\n".join(speaker_labelled_paragraphs)
 
 
-def parse_detected_entities_response(detected_entities_response, entities):
-    """
-    Takes the output of Amazon Comprehend batch_detect_entities and parses it by doing the following
-
-    * It logs the ErrorList, i.e text that failed entity detection
-    * Filters the ResultList by only keeping entities above the ENTITY_CONFIDENCE_THRESHOLD and entities that are not of type QUANTITY
-    * Keeps non-duplicate entities only
-
-    :param detected_entities_response: Response JSON from Amazon Comprehend batch_detect_entities()
-    :param entities: a dict containing sets of entities for each type of entity (initially empty)
-    :return: a dict containing list of entities for each type of entity kept (e.g LOCATION, PERSON etc)
-    """
-    if 'ErrorList' in detected_entities_response and len(detected_entities_response['ErrorList']) > 0:
-        LOGGER.error("encountered error during batch_detect_entities")
-        LOGGER.error("error:" + json.dumps(detected_entities_response['ErrorList'], indent=4))
-
-    if 'ResultList' in detected_entities_response:
-        result_list = detected_entities_response["ResultList"]
-        for result in result_list:
-            detected_entities = result["Entities"]
-            for detected_entity in detected_entities:
-                if float(detected_entity["Score"]) >= ENTITY_CONFIDENCE_THRESHOLD:
-                    entity_type = detected_entity["Type"]
-
-                    if entity_type != 'QUANTITY':
-                        entity_label = detected_entity["Text"]
-
-                        if entity_type in entities:
-                            entities[entity_type].add(entity_label)
-                        else:
-                            entities[entity_type] = {entity_label}
-
-        entity_dict = {}
-        for entity_type in entities:
-            entity_dict[entity_type] = list(entities[entity_type])
-        return entity_dict
-    else:
-        return {}
+# def parse_detected_entities_response(detected_entities_response, entities):
+#     """
+#     Takes the output of Amazon Comprehend batch_detect_entities and parses it by doing the following
+#
+#     * It logs the ErrorList, i.e text that failed entity detection
+#     * Filters the ResultList by only keeping entities above the ENTITY_CONFIDENCE_THRESHOLD and entities that are not of type QUANTITY
+#     * Keeps non-duplicate entities only
+#
+#     :param detected_entities_response: Response JSON from Amazon Comprehend batch_detect_entities()
+#     :param entities: a dict containing sets of entities for each type of entity (initially empty)
+#     :return: a dict containing list of entities for each type of entity kept (e.g LOCATION, PERSON etc)
+#     """
+#     if 'ErrorList' in detected_entities_response and len(detected_entities_response['ErrorList']) > 0:
+#         LOGGER.error("encountered error during batch_detect_entities")
+#         LOGGER.error("error:" + json.dumps(detected_entities_response['ErrorList'], indent=4))
+#
+#     if 'ResultList' in detected_entities_response:
+#         result_list = detected_entities_response["ResultList"]
+#         for result in result_list:
+#             detected_entities = result["Entities"]
+#             for detected_entity in detected_entities:
+#                 if float(detected_entity["Score"]) >= ENTITY_CONFIDENCE_THRESHOLD:
+#                     entity_type = detected_entity["Type"]
+#
+#                     if entity_type != 'QUANTITY':
+#                         entity_label = detected_entity["Text"]
+#
+#                         if entity_type in entities:
+#                             entities[entity_type].add(entity_label)
+#                         else:
+#                             entities[entity_type] = {entity_label}
+#
+#         entity_dict = {}
+#         for entity_type in entities:
+#             entity_dict[entity_type] = list(entities[entity_type])
+#         return entity_dict
+#     else:
+#         return {}
 
 
 def parse_detected_key_phrases_response(detected_phrase_response):

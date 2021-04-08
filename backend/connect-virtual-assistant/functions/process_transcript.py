@@ -26,6 +26,7 @@ CONTACT_DETAILS_TABLE = os.environ['CONTACT_TABLE_NAME']
 CALL_TAKER_TABLE = os.environ['CALL_TAKER_TABLE_NAME']
 JURISDICTIONS_TABLE = os.environ['JURISDICTION_TABLE_NAME']
 
+# TODO Modify this list as needed by adding more jurisdictions with their acronyms
 JURISDICTIONS = [{'key': 'Vancouver', 'value': 'VPD'}, {'key': 'Abbotsford', 'value': 'APD'}]
 
 
@@ -86,7 +87,6 @@ def handler(event, context):
             caller_transcript = record['dynamodb']['NewImage']['Transcript']['S']
             # is_partial = record['dynamodb']['NewImage']['IsPartial']['BOOL']
 
-            # entities = []
             key_phrases = []
             SOPs = []
             keyphrase_list = []
@@ -103,9 +103,6 @@ def handler(event, context):
                 except KeyError as err:
                     callee_transcript = ''
 
-
-
-                # compr_entities_result = compr.detect_entities(Text=transcript, LanguageCode='en')
                 keyphrases_result = COMPREHEND \
                     .batch_detect_key_phrases(TextList=[caller_transcript, callee_transcript], LanguageCode='en')
                 syntax_result = COMPREHEND \
@@ -117,20 +114,7 @@ def handler(event, context):
                 for result in syntax_result["ResultList"]:
                     syntax_tokens += result["SyntaxTokens"]
 
-                # callee_keyphrases_result = COMPREHEND.detect_key_phrases(Text=callee_transcript, LanguageCode='en')
-                # callee_syntax_result = COMPREHEND.detect_syntax(Text=callee_transcript, LanguageCode='en')
-
-                # EntityList = compr_entities_result.get("Entities")
-                # keyphrase_list = detect_keyphrases_result["KeyPhrases"]
-                # syntax_tokens = detect_syntax_result["SyntaxTokens"]
-
-
                 accuracy = 0.80
-
-                # for s in EntityList:
-                #     score = float(s.get("Score")) * 100
-                #     if (score >= accuracy):
-                #         entities.append(s.get("Text").strip('\t\n\r'))
 
                 for keyphrase in keyphrase_list:
                     if float(keyphrase["Score"]) >= accuracy:
@@ -164,7 +148,6 @@ def handler(event, context):
                 top_hits = hits[:3] if len(hits) > 3 else hits
 
                 for hit in top_hits:
-                    # print('%(procedure)s' % hit['_source'])
                     SOPs.append(hit['_source']['procedure'])
 
                 SOP = ', '.join(SOPs) if len(SOPs) > 0 else 'Undetermined'
