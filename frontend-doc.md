@@ -46,7 +46,7 @@ Metadata can also stored with the S3 object using the Metadata config field in t
 
 ## Logging in
 
-Cognito is used to authenticate users into the frontend and integrates with Amplify Storage and API to provide 
+Cognito is used to authenticate users into the frontend and integrates with Kibana to provide 
 authorized access. Users will need to input their email address, name, and a strong password to create an account.
 After account creation, users will need to verify their account by inputting the 6-digit verification code that was 
 sent to their provided email address before being able to log in to the system.

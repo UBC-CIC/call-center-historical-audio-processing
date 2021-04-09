@@ -595,6 +595,27 @@ Resources:
         Value:
           Fn::ImportValue: !Sub "${audioFileTranscribeStack}-ESDomainName"
 
+  CallerTableName:
+    Type: "AWS::SSM::Parameter"
+      Properties:
+        Name: "CallerTableName"
+        Value:
+          Fn::ImportValue: !Ref transcriptSegmentsTable
+
+  CalleeTableName:
+      Type: "AWS::SSM::Parameter"
+        Properties:
+          Name: "CalleTableName"
+          Value:
+            Fn::ImportValue: !Ref transcriptSegmentsTableToCustomer
+
+  CallMetadataTableName:
+      Type: "AWS::SSM::Parameter"
+        Properties:
+          Name: "CallMetadataTableName"
+          Value:
+            Fn::ImportValue: !Ref contactDetailsTable
+
   invokeContactFlowCreator:
     Type: Custom::CreateKVSContactFlow
     Properties:
