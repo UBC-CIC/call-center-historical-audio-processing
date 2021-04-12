@@ -16,7 +16,8 @@ The deployment is similar to that of the call transcriber frontend, as usual you
 * [GitHub Account](https://github.com)
 
 1) Fork and clone this repository into your Github account.
-2) From the AWS Amplify page in the AWS Console, select **Host web app** under the **New app** dropdown, and select Github as the repository option.
+2) From the AWS Amplify page in the AWS Console, select **Host web app** under the **New app** dropdown, and select 
+   Github as the repository option.
 3) After authenticating into your Github account, select the forked repository under the repository dropdown. Leave the default branch as is.
    NOTE: You will need to give permissions to the Amplify service to access your github account if not already done
    ![alt text](./documentation_images/Step1.PNG)

@@ -1,9 +1,9 @@
-# E-Comm 911 Call Transcriber - Frontend
+# E-Comm 911 Historical Audio Processing - Frontend
 
 ## Project Overview
 
 A basic frontend that allow uploading audio files with mapped properties and connects to the
-Call Transcriber backend. This project was bootstrapped using [Create React App](https://github.com/facebook/create-react-app).
+Historical Audio Processing backend. This project was bootstrapped using [Create React App](https://github.com/facebook/create-react-app).
 
 ![alt text](../documentation_images/frontend-upload.png)
 
@@ -17,8 +17,9 @@ You will need the following resources before deploying:
 2) From the AWS Amplify page in the AWS Console, select **Host web app** under the **New app** dropdown, and select 
    Github as the repository option.
 3) After authenticating into your Github account, select the forked repository under the repository dropdown. Leave 
-   the default branch as is.
-![alt text](../documentation_images/frontend-select-repo.png)
+   the default branch as is. However select `Connecting a mono repo` and enter `historical-audio-processing` (essentially
+   pointing to the folder of the frontend root)
+![alt text](../documentation_images/frontend-select-repo.PNG)
 4) On the next page, **App build and test settings**, keep the default build settings. You can rename the app name.
 5) Select **Create new environment** under the **Select a backend environment** dropdown, and select your AWS Amplify 
    service role in the following dropdown if one exists; if not, Select 'Create new role' and quickly create one using 
