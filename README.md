@@ -9,14 +9,14 @@ between the currently transcribed call and transcripts of audio call files provi
 
 ## High-level Architecture
 
-![alt text](./images/ecomm911-AWS-diagram.png)
+![alt text](documentation_images/ecomm911-AWS-diagram.png)
 
 ## Stack Documentation and Deployment Guides
 
-[Call Transcriber Backend Stack Deployment](./backend/transcript-indexer/README.md)\
-[Call Transcriber Frontend Stack Deployment](./frontend-doc.md)\
-[Virtual Assistant Backend Stack Deployment](./backend/connect-virtual-assistant/README.md)\
-[Virtual Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-virtual-assistant-frontend/blob/main/README.md)
+[Call Transcriber Backend Stack Deployment](historical-audio-processing-backend/README.md)\
+[Call Transcriber Frontend Stack Deployment](historical-audio-processing-frontend/frontend-doc.md)\
+[Virtual Assistant Backend Stack Deployment](real-time-assistant-backend/README.md)\
+[Virtual Assistant Frontend Stack Deployment](real-time-assistant-frontend/README.md)\
 
 ## Credits
 This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 

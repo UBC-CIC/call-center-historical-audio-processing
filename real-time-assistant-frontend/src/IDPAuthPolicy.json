@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "VisualEditor0",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:BatchGet*",
+        "dynamodb:PutItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:Get*",
+        "dynamodb:BatchWrite*",
+        "dynamodb:Scan",
+        "dynamodb:Query",
+        "dynamodb:DescribeStream"
+      ],
+      "Resource": "arn:aws:dynamodb:*:*:table/*"
+    },
+    {
+      "Sid": "VisualEditor1",
+      "Effect": "Allow",
+      "Action": [
+        "es:ESHttpHead",
+        "es:ESHttpPost",
+        "es:ESHttpGet",
+        "es:ESHttpPut"
+      ],
+      "Resource": [
+        "arn:aws:es:*:*:domain/*"
+      ]
+    }
+  ]
+}
