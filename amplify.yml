@@ -1,6 +1,6 @@
 version: 1
 applications:
-  - appRoot: /audio-processing-frontend
+  - appRoot: audio-processing-frontend
     backend:
       phases:
         preBuild:
@@ -28,7 +28,7 @@ applications:
         paths:
           - node_modules/**/*
 
-  - appRoot: /real-time-assistant-frontend
+  - appRoot: real-time-assistant-frontend
     backend:
       phases:
         build:
