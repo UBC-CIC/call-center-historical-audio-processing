@@ -1,4 +1,4 @@
-# E-Comm 911 Connect Virtual Assistant (Part 2)
+# E-Comm 911 Real-Time Assistant (Part 2)
 
 ## Project Overview
 The second half of the E-Comm 911 call center virtual assistant proof of concept - this stack initializes the 
@@ -35,13 +35,13 @@ aws cloudformation deploy --capabilities CAPABILITY_IAM --template ./template.ya
    Navigate to the newly created S3 bucket and download the contact flow, which is essentially a JSON file.
 7) Login to your AWS Connect instance. Select **Contact Flows** under Routing on the left sidebar, and click 
    on **Create Contact Flow**.
-![alt text](images/create-contact-flow.png)
+![alt text](../documentation_images/create-contact-flow.png)
 8) Select **Import flow (beta)** under the Save dropdown and select the downloaded file. Save and publish.
-![alt text](images/import-connect-contact-flow.png)
+![alt text](../documentation_images/import-connect-contact-flow.png)
 9) Select **Phone numbers** under the Routing on the left sidebar, then click **Claim a number**. Select a number 
    (or use a ported phone number) and select the recently created contact flow under Additional Options and press 
    **Save** to map the contact flow to the number. Calling the number will trigger the contact flow and start transcription.
-![alt text](images/claim-phone-number.png)
+![alt text](../documentation_images/claim-phone-number.png)
 
 Contact flows define flow logic in AWS Connect; the sample contact flow created during deployment has all the 
 functionality needed to initialize audio streaming and trigger the Transcribe lambda function and the rest of the 
@@ -73,7 +73,7 @@ this package will be found in the ```build/distributions``` folder on a successf
   DynamoDB transcript tables. It extracts location entities and key phrases from the transcript, and performs a 
   'more like this' query for similarity against other stored call transcripts to retrieve the top three SOPs. This 
   lambda function will then write the results to the ```ContactDetails``` DynamoDB table.
-![alt text](images/contact-details-table.png)
+![alt text](../documentation_images/contact-details-table.png)
 
 ## ElasticSearch
 As mentioned before, use of ElasticSearch is integrated for SOP (Standard Operating Procedure) search recommendation. 

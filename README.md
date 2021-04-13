@@ -13,10 +13,10 @@ between the currently transcribed call and transcripts of audio call files provi
 
 ## Stack Documentation and Deployment Guides
 
-[Call Transcriber Backend Stack Deployment](historical-audio-processing-backend/README.md)\
-[Call Transcriber Frontend Stack Deployment](audio-processing-frontend/frontend-doc.md)\
+[Audio Processing Backend Stack Deployment](audio-processing-backend/README.md)\
+[Audio Processing Frontend Stack Deployment](audio-processing-frontend/README.md)\
 [Virtual Assistant Backend Stack Deployment](real-time-assistant-backend/README.md)\
-[Virtual Assistant Frontend Stack Deployment](real-time-assistant-frontend/README.md)\
+[Virtual Assistant Frontend Stack Deployment](real-time-assistant-frontend/README.md)
 
 ## Credits
 This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 

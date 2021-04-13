@@ -5,7 +5,7 @@
 A basic frontend that allow uploading audio files with mapped properties and connects to the
 Historical Audio Processing backend. This project was bootstrapped using [Create React App](https://github.com/facebook/create-react-app).
 
-![alt text](../documentation_images/frontend-upload.png)
+![alt text](../documentation_images/audio-processing-frontend-upload.png)
 
 ## Deployment
 
@@ -17,17 +17,19 @@ You will need the following resources before deploying:
 2) From the AWS Amplify page in the AWS Console, select **Host web app** under the **New app** dropdown, and select 
    Github as the repository option.
 3) After authenticating into your Github account, select the forked repository under the repository dropdown. Leave 
-   the default branch as is. However select `Connecting a mono repo` and enter `historical-audio-processing` (essentially
+   the default branch as is. Also, select `Connecting a mono repo` and enter `audio-processing-frontend` (essentially
    pointing to the folder of the frontend root)
-![alt text](../documentation_images/frontend-select-repo.PNG)
+   
+   NOTE: You will need to give permissions to the Amplify service to access your github account
+![alt text](../documentation_images/audio-processing-frontend-select-repo.PNG)
 4) On the next page, **App build and test settings**, keep the default build settings. You can rename the app name.
 5) Select **Create new environment** under the **Select a backend environment** dropdown, and select your AWS Amplify 
    service role in the following dropdown if one exists; if not, Select 'Create new role' and quickly create one using 
    the default settings and refresh the role selection.
-![alt text](../documentation_images/frontend-build-settings.png)
+![alt text](../documentation_images/audio-processing-frontend-build-settings.png)
 6) Review the settings and click **Save and deploy**, and wait for the deployment build to complete, which will take 
    some time.
-![alt text](../documentation_images/frontend-deploy-success.png)
+![alt text](../documentation_images/audio-processing-frontend-deploy-success.png)
 
 Within Amplify Console, you should see an auto-generated URL under **Frontend environment** - that is the URL used 
 to access the frontend build. You can now create your user accounts and log in via the URL.
@@ -40,7 +42,7 @@ Using AWS Amplify, this project has the following configured backend resources:
   audio files, [link to StorageClass documentation](https://aws-amplify.github.io/amplify-js/api/classes/storageclass.html).
   The audio files are deleted in non-debug mode after they have been transcribed and added to the ElasticSearch index.
 * GraphQL-based API that writes file metadata to DynamoDB tables in response to file upload events to send it over to 
-  the transcribe workflow. These DynamoDB tables managed by the GraphQL Schema are TTL-enabled by 
+  the Transcribe workflow. These DynamoDB tables managed by the GraphQL Schema are TTL-enabled by 
   importing a [third-party transformer](https://github.com/flogy/graphql-ttl-transformer). \
 Metadata can also stored with the S3 object using the Metadata config field in the Amplify.put call, and will 
   have the prefix ```"x-amz-meta-"```.

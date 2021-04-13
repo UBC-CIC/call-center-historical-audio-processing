@@ -38,15 +38,16 @@ sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --pro
 ```
 sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
 ```
-4) Follow the next steps after deploying the [frontend](../audio-processing-frontend/frontend-doc.md). Navigate to the 
-   Lambda Console and search for the startTrigger lambda function that was created in the stack. Click 
-   on **Add Trigger** in the Designer under the **Configurations** Tab:
+4) Now follow the [frontend](../audio-processing-frontend/README.md) deployment guide and then move on to the
+   next step. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in 
+   the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](../documentation_images/enable-dynamodb-trigger.png)
 5) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
    dropdown. Check the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](../documentation_images/add-trigger.png)
 
-Now, refer to the [Call Transcriber Frontend Stack deployment guide](../audio-processing-frontend/frontend-doc.md).
+Now, refer to the [Real-Time Assistant Stack deployment guide](../real-time-assistant-backend/README.md) for the next
+step.
 
 ## Accessing Kibana
 
