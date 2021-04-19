@@ -38,7 +38,7 @@ sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --pro
 ```
 sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
 ```
-4) Now follow the [frontend](frontend-README.md) deployment guide and then move on to the
+4) Now follow the [frontend](../frontend-README.md) deployment guide and then move on to the
    next step. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in 
    the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](../documentation_images/enable-dynamodb-trigger.png)
@@ -46,8 +46,8 @@ sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAP
    dropdown. Check the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](../documentation_images/add-trigger.png)
 
-Now, refer to the [Real-Time Assistant Stack deployment guide](../real-time-assistant-backend/README.md) for the next
-step.
+Now, refer to the [Real-Time Assistant Stack deployment guide](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/backend/backend-README.md) 
+for the next step.
 
 ## Accessing Kibana
 
