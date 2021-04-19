@@ -25,7 +25,7 @@ You will need the following resources before deploying:
 5) Select **Create new environment** under the **Select a backend environment** dropdown, and select your AWS Amplify 
    service role in the following dropdown if one exists; if not, Select 'Create new role' and quickly create one using 
    the default settings and refresh the role selection.
-![alt text](documentation_images/frontend-step-2.png)
+![alt text](documentation_images/frontend-step-2.PNG)
 6) Review the settings and click **Save and deploy**, and wait for the deployment build to complete, which will take 
    some time.
 ![alt text](documentation_images/audio-processing-frontend-deploy-success.png)

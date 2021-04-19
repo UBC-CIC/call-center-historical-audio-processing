@@ -1,3 +1,3 @@
-import { createBrowserHistory } from 'src/history';
+import { createBrowserHistory } from 'history';
 
 export default createBrowserHistory();
