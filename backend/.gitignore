@@ -1,0 +1,5 @@
+.DS_Store
+packaged.yaml
+
+/audio-processing-backend/.aws-sam
+../backend/historical-audio-processing-backend/out.yaml

@@ -1,0 +1,19 @@
+type Transcript @model
+  @auth(rules: [
+      { allow: owner },
+      { allow: private, provider: userPools }
+  ]) {
+  id: ID!
+  description: String
+  jurisdiction: String
+  fileType: String
+  fileName: String
+  procedure: String
+  fileData: S3Object
+  expireTime: AWSTimestamp! @ttl
+}
+
+type S3Object {
+  bucketName: String!
+  bucketKey: String!
+}

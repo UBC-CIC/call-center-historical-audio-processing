@@ -13,14 +13,15 @@ between the currently transcribed call and transcripts of audio call files provi
 
 ## Stack Documentation and Deployment Guides
 
-[Audio Processing Backend Stack Deployment](audio-processing-backend/README.md)\
-[Audio Processing Frontend Stack Deployment](audio-processing-frontend/README.md)\
-[Virtual Assistant Backend Stack Deployment](real-time-assistant-backend/README.md)\
-[Virtual Assistant Frontend Stack Deployment](real-time-assistant-frontend/README.md)
+[Audio Processing Backend Stack Deployment](backend/backend-README.md) \
+[Audio Processing Frontend Stack Deployment](frontend-README.md) \
+[Real-Time Assistant Backend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/backend/backend-README.md) \
+[Real-Time Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/frontend-README.md)
 
 ## Credits
-This proof of concept was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 
-and with quoted usage and reference to some AWS sample template projects.
+This prototype was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 
+and with quoted usage and reference to some AWS sample template projects. The prototype was further refined by 
+Neelim Novo and Sathvik Radhakrishnan, with the addition of the Real-Time Assistant being designed and developed by them. 
 
 ## License
 This project is distributed under the [MIT License](./LICENSE).

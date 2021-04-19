@@ -1,11 +1,11 @@
 
 
 #amplify
-audio-processing-frontend/amplify/\#current-cloud-backend
-audio-processing-frontend/amplify/.config/local-*
-audio-processing-frontend/amplify/mock-data
-audio-processing-frontend/amplify/backend/amplify-meta.json
-audio-processing-frontend/amplify/backend/awscloudformation
+amplify/\#current-cloud-backend
+amplify/.config/local-*
+amplify/mock-data
+amplify/backend/amplify-meta.json
+amplify/backend/awscloudformation
 build/
 dist/
 node_modules/
