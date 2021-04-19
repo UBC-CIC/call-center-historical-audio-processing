@@ -1,6 +1,6 @@
 import React from "react";
-import {Form, Input, TextArea} from 'semantic-ui-react-form-validator'
-import {Header, Container, Button, Grid, Segment, Checkbox, Message} from 'semantic-ui-react';
+import {Form, Input} from 'semantic-ui-react-form-validator'
+import {Header, Button, Grid, Segment, Message} from 'semantic-ui-react';
 import { Auth } from 'aws-amplify';
 import { NavLink, withRouter } from 'react-router-dom';
 import {compose} from "redux";

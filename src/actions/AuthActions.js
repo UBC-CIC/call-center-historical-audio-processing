@@ -1,5 +1,4 @@
 import {userConstants} from "../constants/userConstant";
-import { Cache } from 'aws-amplify';
 
 export const loginSuccess = (user) => {
     return {
