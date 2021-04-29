@@ -33,21 +33,26 @@ CONTENT_TYPE_TO_MEDIA_FORMAT = {
 
 
 class InvalidInputError(ValueError):
+    """
+    Error raised on invalid input file type to Transcribe
+    """
     pass
 
 
 class TranscribeException(Exception):
-    # Does nothing for this file but stops the lambda from returning any values
+    """
+    Error raised on Transcribe request formatting
+    """
     pass
 
 
 def lambda_handler(event, context):
     """
-    Upon successful upload of an audio file, this lambda handler takes the audio and
-    starts an audio transcription request via Amazon Transcribe
+    The first function in the step functions workflow. It starts a Transcribe request for the audio file
+    uploaded to S3
 
-    :param event: All event variables including request params in `start_trigger.py` lambda
-    :return: A dict for the `check_transcribe.py` lambda handler
+    :param event: Input that is passed in when `start_trigger.py` starts the step functions workflow
+    :return: A dict for the `check_transcribe.py` lambda
     """
 
     # Default to unsuccessful

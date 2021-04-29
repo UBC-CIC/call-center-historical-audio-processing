@@ -13,14 +13,14 @@ COGNITO_IDP_CLIENT = boto3.client('cognito-idp')
 
 def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
     """
-    Helper function for kibana credential generation, generates a random ID
+    Helper function for cognito user credential generation, generates a random ID
     """
     return ''.join(random.choice(chars) for _ in range(size))
 
 
 def pwd_generator(size=8):
     """
-    Helper function for kibana credential generation, generates a random password
+    Helper function for cognito user credential generation, generates a random password
     """
     lowerChars = string.ascii_lowercase
     upperChars = string.ascii_uppercase
@@ -92,7 +92,7 @@ def get_user_credentials(event):
 
 def add_user(userPoolId, kibanaUser, kibanaEmail, kibanaPassword):
     """
-    Adds the input kibana user with their given credentials to the given Cognito user pool
+    Adds the input Cognito user with their given credentials to the given Cognito user pool
     and returns the cognito response
     """
     cognito_response = COGNITO_IDP_CLIENT.admin_create_user(

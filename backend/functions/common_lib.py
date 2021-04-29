@@ -30,6 +30,5 @@ Contains helper functions only, not a lambda function file
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     """
     Random string generator using uppercase letters and digits
-
     """
     return ''.join(random.choice(chars) for _ in range(size))

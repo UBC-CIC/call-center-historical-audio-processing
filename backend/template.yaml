@@ -334,9 +334,9 @@ Resources:
 
 
 #########################################################
-# The below gives ES service access                      #
-# to configure the Amazon Cognito user and identity pools #
-# and use them for authentication                        #
+# The role below gives ES service access                #
+# to Amazon Cognito                                     #
+# and hence the user in user pool for authentication    #
 #########################################################
 
   CognitoAccessForAmazonES:

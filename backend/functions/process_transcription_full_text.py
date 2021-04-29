@@ -30,10 +30,6 @@ S3_CLIENT = boto3.client("s3")
 COMPREHEND_CLIENT = boto3.client(service_name='comprehend', region_name=REGION)
 
 
-class InvalidInputError(ValueError):
-    pass
-
-
 def process_transcript(transcription_url, vocabulary_info):
     """
     Processes the transcript and returns the S3 bucket URI of processed transcript
@@ -74,9 +70,7 @@ def process_transcript(transcription_url, vocabulary_info):
     key_phrases.extend(extra_keywords)
     LOGGER.info(f"Final keyphrases:{key_phrases}")
 
-    doc_to_update = {'transcript': speaker_labelled_paragraphs,
-                     # 'transcript_entities': entities,
-                     'key_phrases': key_phrases}
+    doc_to_update = {'transcript': speaker_labelled_paragraphs, 'key_phrases': key_phrases}
     LOGGER.debug(json.dumps(doc_to_update, indent=4))
 
     key = f'calls/transcript/{id_generator()}.json'
@@ -95,11 +89,12 @@ def chunk_up_transcript(custom_vocabs, results):
     Takes the result from Amazon Transcribe, breaks it down into two lists with
     chunks of text, paragraphs with speaker labels and raw spoken text for AWS Comprehend processing. The
     resulting text is updated with both a custom vocabulary that is passed in and a global
-    vocabulary that exists as a global parameter
+    vocabulary that exists as a global parameter.
+    Helper function for ``process_transcript()``
 
     :param custom_vocabs: Custom vocabulary mapping Transcribe response to an arbitrary string depending on use case
     :param results: the JSON response from Amazon Transcribe
-    :return: comprehend_text: A list of 4500+ word chunks to be sent to Amazon Comprehend for interpretation
+    :return: comprehend_text: A list of about 4500 word chunks to be sent to Amazon Comprehend for interpretation
              speaker_labelled_paragraphs: A list of Transcribe text broken down into small chunks and
              separated by speaker labels
     """
@@ -199,46 +194,6 @@ def chunk_up_transcript(custom_vocabs, results):
     return comprehend_chunks, "\n\n".join(speaker_labelled_paragraphs)
 
 
-# def parse_detected_entities_response(detected_entities_response, entities):
-#     """
-#     Takes the output of Amazon Comprehend batch_detect_entities and parses it by doing the following
-#
-#     * It logs the ErrorList, i.e text that failed entity detection
-#     * Filters the ResultList by only keeping entities above the ENTITY_CONFIDENCE_THRESHOLD and entities that are not of type QUANTITY
-#     * Keeps non-duplicate entities only
-#
-#     :param detected_entities_response: Response JSON from Amazon Comprehend batch_detect_entities()
-#     :param entities: a dict containing sets of entities for each type of entity (initially empty)
-#     :return: a dict containing list of entities for each type of entity kept (e.g LOCATION, PERSON etc)
-#     """
-#     if 'ErrorList' in detected_entities_response and len(detected_entities_response['ErrorList']) > 0:
-#         LOGGER.error("encountered error during batch_detect_entities")
-#         LOGGER.error("error:" + json.dumps(detected_entities_response['ErrorList'], indent=4))
-#
-#     if 'ResultList' in detected_entities_response:
-#         result_list = detected_entities_response["ResultList"]
-#         for result in result_list:
-#             detected_entities = result["Entities"]
-#             for detected_entity in detected_entities:
-#                 if float(detected_entity["Score"]) >= ENTITY_CONFIDENCE_THRESHOLD:
-#                     entity_type = detected_entity["Type"]
-#
-#                     if entity_type != 'QUANTITY':
-#                         entity_label = detected_entity["Text"]
-#
-#                         if entity_type in entities:
-#                             entities[entity_type].add(entity_label)
-#                         else:
-#                             entities[entity_type] = {entity_label}
-#
-#         entity_dict = {}
-#         for entity_type in entities:
-#             entity_dict[entity_type] = list(entities[entity_type])
-#         return entity_dict
-#     else:
-#         return {}
-
-
 def parse_detected_key_phrases_response(detected_phrase_response):
     """
     Given the result of batch_detect_key_phrases from Amazon Comprehend
@@ -269,12 +224,13 @@ def parse_detected_key_phrases_response(detected_phrase_response):
 
 def parse_verbs_from_syntaxes(syntax_results):
     """
-    Given the result of batch_detect_key_phrases from Amazon Comprehend
+    Given the result of batch_detect_syntax from Amazon Comprehend
     It logs the ErrorList,
-    returns a list of key_phrases that are above KEY_PHRASES_CONFIDENCE_THRESHOLD with no duplicate entries
+    returns a list of adjectives and adverbs that are above KEY_PHRASES_CONFIDENCE_THRESHOLD
+    with no duplicate entries
 
-    :param syntax_results: Response from Amazon Comprehend for batch_detect_key_phrases
-    :return: a list of noun key_phrases with no duplicates
+    :param syntax_results: Response from Amazon Comprehend for batch_detect_syntax
+    :return: a list of syntaxes with no duplicates
     """
     if 'ErrorList' in syntax_results and len(syntax_results['ErrorList']) > 0:
         LOGGER.error("encountered error during batch_detect_syntax")
@@ -293,6 +249,9 @@ def parse_verbs_from_syntaxes(syntax_results):
 
 
 def token_is_adjective_or_adverb(tag):
+    """
+    Checks if input string equals ADJ or VERB, helper function for parse_verbs_from_syntaxes
+    """
     return tag == 'ADJ' or tag == 'VERB'
 
 
@@ -300,6 +259,7 @@ def parse_speaker_segments(results):
     """
     From the Amazon Transcribe results JSON response, this function parses a list of all segments, their timeframe
     and associated speaker label. The individual 'items' key of each segment are not parsed
+    Helper function for ``chunk_up_transcript()``
 
     :param results: Amazon Transcribe results JSON
     :return: List of segments with their time-frames and speaker labels
@@ -318,6 +278,7 @@ def parse_speaker_segments(results):
 def get_speaker_label(speaker_segments, time_stamp):
     """
     Performs a linear search for the associated speaker for a given time_stamp
+    Helper function for ``chunk_up_transcript()``
 
     :param speaker_segments: List of speaker segments
     :param time_stamp: The time to search for in the list of speaker segments
@@ -335,6 +296,7 @@ def lambda_handler(event, context):
         Processes the result of the transcription using Amazon Comprehend, parses that result, and stores
         it in the S3 bucket
 
+        :param event: All the event variables inside a dictionary
         :return A dict containing the transcription bucket and key, returned in event['processedTranscription']
                 for `upload_to_elasticsearch.py` lambda handler
     """
@@ -344,8 +306,9 @@ def lambda_handler(event, context):
     # Pull the signed URL for the payload of the transcription job
     transcription_url = event['checkTranscribeResult']['transcriptionUrl']
 
-    vocab_info = None
     # NOTE: Custom vocabulary may be inserted here
+    vocab_info = None
+
     if 'vocabularyInfo' in event:
         vocab_info = event['vocabularyInfo']
     return process_transcript(transcription_url, vocab_info)

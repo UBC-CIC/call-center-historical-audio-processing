@@ -27,7 +27,6 @@ IS_DEBUG_MODE = os.environ['DEBUG_MODE']
 
 # get the Elasticsearch index name from the environment variables
 ES_INDEX = os.getenv('ES_INDEX', default='transcripts')
-# get the Elasticsearch index name from the environment variables
 
 S3_CLIENT = boto3.client('s3')
 # Create the auth token for the sigv4 signature
@@ -90,7 +89,6 @@ def index_transcript(event, call_transcript_s3_location):
         'procedure': event['procedure'],
         'audio_s3_location': s3_location,
         'transcript':  full_call_transcript['transcript'],
-        # 'transcript_entities':  full_call_transcript['transcript_entities'],
         'key_phrases': full_call_transcript['key_phrases']
     }
 

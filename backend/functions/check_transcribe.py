@@ -1,5 +1,6 @@
 import boto3
 import logging
+
 logging.basicConfig()
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
@@ -9,11 +10,14 @@ TRANSCRIBE_CLIENT = boto3.client('transcribe')
 
 def lambda_handler(event, context):
     """
-    Lambda function that checks if the transcribe job started by call_transcribe has finished
-    Then it returns the transcription result obtained from Amazon Transcribe
+    Second Lambda function in the step functions workflow. It checks if the Transcribe job has finished,
+    if not, it runs again to check after 60 seconds.
+    If the Transcribe Job has finished, it returns the Transcribe url whose payload can be read to retrieve
+    the audio transcript with personal information redacted
 
-    :param event All the event variables inside a dictionary
-    :return: An transcription job results in event['transcribeStatus]
+
+    :param event: All the event variables inside a dictionary
+    :return: An transcription job results in event['transcribeUrl']
     """
     transcribe_job = event['callTranscribeResult']['transcribeJob']
 
