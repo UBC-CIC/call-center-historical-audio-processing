@@ -1,10 +1,11 @@
-# E-Comm 911 - Historical Audio Processing (Part 1)
+# E-Comm911 - Historical Audio Processing (Part 1)
 
 ## Project Overview
 
-The first half of the E-Comm 911 call center virtual assistant Proof of concept - an application stack that transcribes 
-and provides PII redaction for audio files and their corresponding metadata received from the frontend, and indexes the 
-resulting processed transcripts into an Elasticsearch domain for future querying during ongoing calls. This portion of 
+The first half of the E-Comm911 call center virtual assistant Proof of Concept - an application stack that transcribes 
+audio files with Personally Identifiable Information (PII) removed, processes them, extracts keyphrases, receives their 
+corresponding metadata from the frontend (i.e associated SOP and Jurisdiction), and then indexes the resulting processed 
+transcripts into an Elasticsearch domain for future querying during ongoing calls. This portion of 
 the solution leverages Amazon Transcribe, Amazon Comprehend, Amazon Elasticsearch, AWS Step Functions and AWS Lambda. 
 Do note that this stack should be deployed first as the real-time assistant stack with AWS Connect Integration 
 has a dependency on this stack.
@@ -17,6 +18,7 @@ Some system requirements before starting deployment:
 * Python3.8 installed and added to PATH (you can select this in the installer), download the 
   installer [here](https://www.python.org/downloads/release/python-387/). 
   Run ```pip install wheel``` in the command line if there are any issues with ```sam build``` resolving dependencies.
+* Have the repository downloaded into your local directory
 
 1) Create an S3 bucket for deployment:
 ```
@@ -24,8 +26,8 @@ aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuratio
 ```
 NOTE: If using region us-east-1, remove the entire `--create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION>`section
 
-2) Run the following SAM commands in this subdirectory (i.e `ecomm911-virtual-assistant/historical-audio-processing-backend`) 
-   to build and package the application onto the created S3 bucket in the first step:
+2) Clone the repo into your local directory if you haven't already, then run the following SAM commands in this 
+   subdirectory (i.e `./backend`) to build and package the application onto the created S3 bucket in the first step:
 ```
 sam build
 ```
@@ -33,21 +35,25 @@ sam build
 sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --profile <YOUR-PROFILE>
 ```
 3) Run the following SAM command to deploy the application. You can add the optional ```--guided``` flag for AWS SAM to 
-   provide step-by-step prompts for the deployment process. The stack will take some time to
-   finish deployment, due to creating the Elasticsearch cluster.:
+   provide step-by-step prompts for the deployment process. When using the guided flag, choose default options for 
+   everything until the prompt `Deploy this changeset? [y/N]:` appears, in which case type `y` to confirm deployment
+   The stack will take some time to finish deployment, due to creating the Elasticsearch cluster (about 20 minutes):
 ```
 sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
 ```
-4) Now follow the [frontend](../frontend-README.md) deployment guide and then move on to the
-   next step. Navigate to the Lambda Console and search for the startTrigger lambda function that was created in 
+
+4) Now follow the [frontend](docs/frontend-README.md) deployment guide and then continue with step 5 once the frontend
+   has finished deploying. 
+   
+5) Navigate to the Lambda Console and search for the "startTrigger" lambda function that was created in 
    the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
-![alt text](../documentation_images/enable-dynamodb-trigger.png)
-5) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
+![alt text](enable-dynamodb-trigger.png)
+6) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
    dropdown. Check the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
-![alt text](../documentation_images/add-trigger.png)
+![alt text](add-trigger.png)
 
 Now, refer to the [Real-Time Assistant Stack deployment guide](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/backend/backend-README.md) 
-for the next step.
+for the next steps to deploy the second part of the Virtual Assistant application.
 
 ## Accessing Kibana
 
@@ -59,13 +65,13 @@ be found in the Output tab for the CloudFormation stack once deployment is compl
    logging in for the first time.
 2) Click on **Discover** (The compass icon on the left sidebar) and type 'transcripts' in the index pattern field, and 
    this should match the index created in the Elasticsearch cluster. Click on **Create Index Pattern** in the next step.
-![alt text](../documentation_images/kibana-create-index-pattern.png)
+![alt text](kibana-create-index-pattern.png)
 3) You will be taken to the management screen where you can view all the fields in the ```transcripts``` index. 
    Navigating back to the **Discover** panel, you will be able to view all the indexed documents and perform queries in the search bar.
-![alt text](../documentation_images/kibana-document-query.png)
+![alt text](kibana-document-query.png)
 
 ## State Machine Architecture
-![alt text](../documentation_images/state-machine.png)
+![alt text](state-machine.png)
 
 This workflow is designed to integrate with the frontend architecture; the state machine is invoked by the `start_trigger.py` lambda function,
 which is triggered by insert events into the `Transcripts` DynamoDB table by the Amplify API, which contains metadata for the audio 
