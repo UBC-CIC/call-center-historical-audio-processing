@@ -10,6 +10,7 @@ between the currently transcribed call and transcripts of audio call files provi
 <hr/>
 
 **This repository contains the first part of the entire application stack, the *historical audio processing tool*.**
+
 <hr/>
 
 ## High-level Architecture
@@ -21,7 +22,7 @@ between the currently transcribed call and transcripts of audio call files provi
 [Audio Processing Backend Stack Deployment](docs/backend-README.md) \
 [Audio Processing Frontend Stack Deployment](docs/frontend-README.md) \
 [Real-Time Assistant Backend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/backend-README.md) (points to the real-time assistant repository)\
-[Real-Time Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/frontend-README.md) (points to a real-time assistant repository)
+[Real-Time Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/frontend-README.md) (points to the real-time assistant repository)
 
 ## Credits
 This prototype was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 
