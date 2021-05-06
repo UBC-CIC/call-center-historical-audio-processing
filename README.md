@@ -1,14 +1,16 @@
-# E-Comm 911 Connect Virtual Assistant
+# E-Comm 911 Virtual Assistant - Historical Audio Processing Repository
 
 ## Project Summary
 
-The E-Comm 911 Connect Virtual Assistant tool serves to assist non-emergency call takers in identifying the nature and 
+The E-Comm 911 Virtual Assistant tool serves to assist non-emergency call takers in identifying the nature and 
 scenario of incoming calls and moving ahead with the correct standard procedures, leading to increase in overall 
 efficiency and accuracy in call-taking. Procedure recommendations are based on keyphrase similarity in ElasticSearch 
 between the currently transcribed call and transcripts of audio call files provided by the user.
-<br/>
+
+<hr/>
 
 **This repository contains the first part of the entire application stack, the *historical audio processing tool*.**
+<hr/>
 
 ## High-level Architecture
 
@@ -18,8 +20,8 @@ between the currently transcribed call and transcripts of audio call files provi
 
 [Audio Processing Backend Stack Deployment](docs/backend-README.md) \
 [Audio Processing Frontend Stack Deployment](docs/frontend-README.md) \
-[Real-Time Assistant Backend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/backend-README.md) \
-[Real-Time Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/frontend-README.md)
+[Real-Time Assistant Backend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/backend-README.md) (points to the real-time assistant repository)\
+[Real-Time Assistant Frontend Stack Deployment](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/docs/frontend-README.md) (points to a real-time assistant repository)
 
 ## Credits
 This prototype was coded and architected by Colin Zhang, with guidance from the UBC CIC tech and project teams 
