@@ -11,8 +11,9 @@ Do note that this stack should be deployed first as the real-time assistant stac
 has a dependency on this stack.
 
 ## Deployment Steps
+The application can be deployed from MacOS, Linux, Windows and Windows Subsystem for Linux.
 
-Some system requirements before starting deployment:
+Some system installation requirements before starting deployment:
 * AWS SAM installed on your system, details on the installation can be found 
   [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
 * Python3.8 installed and added to PATH (you can select this in the installer), download the 
@@ -20,40 +21,48 @@ Some system requirements before starting deployment:
   Run ```pip install wheel``` in the command line if there are any issues with ```sam build``` resolving dependencies.
 * Have the repository downloaded into your local directory
 
-1) Create an S3 bucket for deployment:
-```
-aws s3api create-bucket --bucket <YOUR-BUCKET-NAME> --create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION> --profile <YOUR-PROFILE>
-```
-NOTE: If using region us-east-1, remove the entire `--create-bucket-configuration LocationConstraint=<YOUR-REGION> --region <YOUR-REGION>`section
 
-2) Clone the repo into your local directory if you haven't already, then run the following SAM commands in this 
-   subdirectory (i.e `./backend`) to build and package the application onto the created S3 bucket in the first step:
-```
-sam build
-```
-```
-sam package --s3-bucket <YOUR-BUCKET-NAME> --output-template-file out.yaml --profile <YOUR-PROFILE>
-```
-3) Run the following SAM command to deploy the application. You can add the optional ```--guided``` flag for AWS SAM to 
-   provide step-by-step prompts for the deployment process. When using the guided flag, choose default options for 
-   everything until the prompt `Deploy this changeset? [y/N]:` appears, in which case type `y` to confirm deployment
-   The stack will take some time to finish deployment, due to creating the Elasticsearch cluster (about 20 minutes):
-```
-sam deploy --template-file out.yaml --stack-name <STACK-NAME> --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile <YOUR-PROFILE> --region <YOUR-REGION> --guided
-```
-
-4) Now follow the [frontend](docs/frontend-README.md) deployment guide and then continue with step 5 once the frontend
-   has finished deploying. 
+1) Open the terminal in the `backend` folder of the repository, and then run the deployment script using the following command using 
+   your own parameter values
    
-5) Navigate to the Lambda Console and search for the "startTrigger" lambda function that was created in 
+   For Mac, Linux and Windows Subsystem for Linux users:
+
+   ```   
+   deploy.sh --bucket-name <AWS_BUCKET_NAME> --aws-region <AWS_REGION> --aws-profile <AWS_PROFILE> --stack-name <STACK_NAME>
+   ```
+
+   For Windows users:
+   ```   
+   deploy.bat bucket-name:<AWS_BUCKET_NAME> aws-region:<AWS_REGION> aws-profile:<AWS_PROFILE> stack-name:<STACK_NAME>
+   ```
+    
+   This step will:
+   <ul>
+   <li>create an S3 bucket for deployment</li>
+   <li>use AWS SAM to build the lambda functions</li>
+   <li>package them into a deployment zip in the S3 bucket</li>
+   <li>and finally deploy them using the cloudformation template, template.yaml </li>
+   </ul>
+   The deployment step takes some time (about 20 minutes) due to creating the Elasticsearch domain, which itself takes 
+   about 15 minutes.
+   Keep note of the bucket and stack name that is picked, they will be needed in the deployment of the second part of
+   the application.
+
+3) Now follow the [frontend](docs/frontend-README.md) deployment guide and then continue with step 3 once the frontend
+   has finished deploying as we wait for a dependency in the frontend. 
+   
+4) Navigate to the Lambda Console and search for the "startTrigger" lambda function that was created in 
    the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](enable-dynamodb-trigger.png)
-6) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
+5) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
    dropdown. Check the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](add-trigger.png)
+   
+   These two steps configure the `startTrigger` lambda function to trigger off the DynamoDB table created by the frontend
+   which stores metadata for the uploaded files, and hence allows the transcription to start.
 
 Now, refer to the [Real-Time Assistant Stack deployment guide](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/backend/backend-README.md) 
-for the next steps to deploy the second part of the Virtual Assistant application.
+(which is housed in a different repository) for the next steps to deploy the second part of the Virtual Assistant application.
 
 ## Accessing Kibana
 
