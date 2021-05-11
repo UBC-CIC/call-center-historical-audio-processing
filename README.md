@@ -9,7 +9,8 @@ between the currently transcribed call and transcripts of audio call files provi
 
 <hr/>
 
-**This repository contains the first part of the entire application stack, the *historical audio processing tool*.**
+**This repository contains the first part of the entire application stack, the
+<span style="color: #53a638;"> *historical audio processing tool*</span>.**
 
 <hr/>
 

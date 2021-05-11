@@ -43,18 +43,19 @@ Some system installation requirements before starting deployment:
    <li>package them into a deployment zip in the S3 bucket</li>
    <li>and finally deploy them using the cloudformation template, template.yaml </li>
    </ul>
+
    The deployment step takes some time (about 20 minutes) due to creating the Elasticsearch domain, which itself takes 
    about 15 minutes.
    Keep note of the bucket and stack name that is picked, they will be needed in the deployment of the second part of
    the application.
 
-3) Now follow the [frontend](docs/frontend-README.md) deployment guide and then continue with step 3 once the frontend
+2) Now follow the [frontend](docs/frontend-README.md) deployment guide and then continue with step 3 once the frontend
    has finished deploying as we wait for a dependency in the frontend. 
    
-4) Navigate to the Lambda Console and search for the "startTrigger" lambda function that was created in 
+3) Navigate to the Lambda Console and search for the "startTrigger" lambda function that was created in 
    the stack. Click on **Add Trigger** in the Designer under the **Configurations** Tab:
 ![alt text](enable-dynamodb-trigger.png)
-5) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
+4) Select **DynamoDB** as the trigger type and select the Transcript table created from frontend deployment from the 
    dropdown. Check the **Enable trigger** checkbox at the bottom and click **Add** to create the trigger.
 ![alt text](add-trigger.png)
    
