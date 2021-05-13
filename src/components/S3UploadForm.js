@@ -29,7 +29,7 @@ const initialState = {
   submitSuccess: false,
 };
 
-class S3UploadForm extends React.Component {
+export default class S3UploadForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -226,4 +226,4 @@ class S3UploadForm extends React.Component {
   }
 }
 
-export default withRouter(S3UploadForm);
+// export default withRouter(S3UploadForm);

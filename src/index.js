@@ -1,25 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './components/App';
-import reportWebVitals from './reportWebVitals';
-import { Provider } from 'react-redux';
-import { BrowserRouter as Router } from "react-router-dom";
-import 'semantic-ui-css/semantic.min.css';
-
-import {store} from './store';
-import history from "./history";
-
+import { applyMiddleware, createStore } from "redux";
+import thunk from "redux-thunk";
+import { Provider } from "react-redux";
 import Amplify from "aws-amplify";
 import awsExports from "./aws-exports";
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import reducers from "./reducers";
+import 'semantic-ui-css/semantic.min.css';
+
 Amplify.configure(awsExports);
 
+const store = createStore(
+    reducers, applyMiddleware(thunk)
+);
+
+
 ReactDOM.render(
-  <Provider store={store}>
-      <Router history={history}>
-          <App />
-      </Router>
-  </Provider>,
+    <Provider store={store}>
+            <App />
+    </Provider>,
   document.getElementById('root')
 );
 
