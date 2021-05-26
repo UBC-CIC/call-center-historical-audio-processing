@@ -1,8 +1,8 @@
-# E-Comm911 - Historical Audio Processing (Part 1)
+# Call Center - Historical Audio Processing (Part 1)
 
 ## Project Overview
 
-The first half of the E-Comm911 call center virtual assistant Proof of Concept - an application stack that transcribes 
+The first half of the Call Center Proof of Concept - an application stack that transcribes 
 audio files with Personally Identifiable Information (PII) removed, processes them, extracts keyphrases, receives their 
 corresponding metadata from the frontend (i.e associated SOP and Jurisdiction), and then indexes the resulting processed 
 transcripts into an Elasticsearch domain for future querying during ongoing calls. This portion of 
@@ -62,7 +62,7 @@ Some system installation requirements before starting deployment:
    These two steps configure the `startTrigger` lambda function to trigger off the DynamoDB table created by the frontend
    which stores metadata for the uploaded files, and hence allows the transcription to start.
 
-Now, refer to the [Real-Time Assistant Stack deployment guide](https://github.com/UBC-CIC/ecomm-911-real-time-assistant/blob/main/backend/backend-README.md) 
+Now, refer to the [Real-Time Assistant Stack deployment guide](https://github.com/UBC-CIC/call-center-real-time-assistant/blob/main/backend/backend-README.md) 
 (which is housed in a different repository) for the next steps to deploy the second part of the Virtual Assistant application.
 
 ## Accessing Kibana
