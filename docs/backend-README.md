@@ -14,12 +14,12 @@ has a dependency on this stack.
 The application can be deployed from MacOS, Linux, Windows and Windows Subsystem for Linux.
 
 Some system installation requirements before starting deployment:
+* Have the repository downloaded into your local directory
 * AWS SAM installed on your system, details on the installation can be found 
   [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
 * Python3.8 installed and added to PATH (you can select this in the installer), download the 
   installer [here](https://www.python.org/downloads/release/python-387/). 
   Run ```pip install wheel``` in the command line if there are any issues with ```sam build``` resolving dependencies.
-* Have the repository downloaded into your local directory
 
 
 1) Open the terminal in the `backend` folder of the repository, and then run the deployment script using the following command using 
@@ -43,6 +43,12 @@ Some system installation requirements before starting deployment:
    <li>package them into a deployment zip in the S3 bucket</li>
    <li>and finally deploy them using the cloudformation template, template.yaml </li>
    </ul>
+
+    After running the script, at one point the terminal will prompt:
+    ```
+    Deploy this changeset? [y/N]:
+    ```
+    Enter `y` or `Y` to confirm the deployment
 
    The deployment step takes some time (about 20 minutes) due to creating the Elasticsearch domain, which itself takes 
    about 15 minutes.
