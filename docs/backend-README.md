@@ -15,6 +15,8 @@ The application can be deployed from MacOS, Linux, Windows and Windows Subsystem
 
 Some system installation requirements before starting deployment:
 * Have the repository downloaded into your local directory
+* Having the AWS CLI v2 [installed](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and
+  [configured with credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) on your system
 * AWS SAM installed on your system, details on the installation can be found 
   [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
 * Python3.8 installed and added to PATH (you can select this in the installer), download the 
